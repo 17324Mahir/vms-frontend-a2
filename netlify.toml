@@ -3,8 +3,7 @@
   command = "./scripts/build_web.sh"
 
 [build.environment]
-  # Netlify environment variables (API_BASE_URL can also be configured in Netlify UI)
-  # API_BASE_URL = "https://your-production-backend-domain.com"
+  API_BASE_URL = "https://vms-backend-a2.onrender.com"
 
 # Single-Page Application (SPA) fallback routing
 # Non-forced 200 rewrite allows existing static files to be served directly
