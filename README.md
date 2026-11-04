@@ -1,17 +1,21 @@
-# Stark Group VMS - Frontend
+# Stark Group VMS - Frontend (Assignment 2 Fleet Management)
 
 Frontend application for the **Stark Group Vehicle Management System (VMS)**, built with **Flutter Web** (Material 3) and connected to the Spring Boot REST API.
 
 ---
 
-## 1. Features
+## 1. Assignment 2 Features & Extensions
 
-- **Authentication:** Professional login screen with in-memory JWT token storage, reactive session state, route guards, and auto-logout on 401.
-- **Fleet Registry:** Paginated vehicle list with search by vehicle number, brand, and model, filtering by company and status, and responsive summary stats cards.
-- **Vehicle Registration & Editing:** Clean, validated forms with client-side length/format constraints and inline display of server validation/conflict errors (e.g. duplicate vehicle numbers).
-- **Vehicle Deletion:** Confirmation dialogs preventing accidental deletions, with instant UI removal upon HTTP 204.
-- **Responsive Layout:** Adaptive UI supporting desktop wide screens, tablets, and mobile viewports.
-- **Netlify Ready:** Self-contained CI build script (`scripts/build_web.sh`) downloading pinned Flutter SDK with SHA-256 verification and SPA rewrite configuration (`netlify.toml`).
+1. **Vehicle Document Upload & Storage:** Support for Registration, Tax Token, Insurance, Fitness Certificate, and other documents with file upload support.
+2. **Document Expiry Tracking:** Real-time expiry alerts with calculated days until expiry (`EXPIRED`, `EXPIRING_SOON`, `VALID` badges).
+3. **Vehicle Maintenance Management:** Logging service records with date, service type, cost, workshop/vendor, and odometer reading.
+4. **Maintenance History Ledger:** Chronological service records for each vehicle with aggregated lifetime spend.
+5. **Vehicle Lifecycle Status Management:** Immediate status updates across `ACTIVE`, `INACTIVE`, and `MAINTENANCE` states.
+6. **Multi-Field Vehicle Search:** Server-side search by Vehicle Number, Brand, Model, Company, and Driver.
+7. **Server-Side Pagination & Sorting:** Paginated vehicle list handling large enterprise datasets.
+8. **Driver Directory & Management:** Complete Driver CRUD with duplicate license number validation, license expiry tracking, and status indicator (`AVAILABLE`, `ASSIGNED`, `SUSPENDED`).
+9. **Driver–Vehicle Assignment:** Dynamic driver assignment and unassignment with automatic driver status updates.
+10. **Fleet Dashboard & Analytics:** High-level executive KPIs (total vehicles, active/maintenance/inactive breakdown, registered drivers, lifetime maintenance cost, and urgent renewal notices).
 
 ---
 
@@ -74,7 +78,7 @@ flutter test
 
 ### Build Production Web Release Bundle
 ```bash
-./scripts/build_web.sh
+flutter build web --release --no-tree-shake-icons
 ```
 Output directory: `build/web/`
 
@@ -83,4 +87,4 @@ Output directory: `build/web/`
 ## 7. Associated Backend Repository
 
 The Spring Boot REST backend is maintained in:
-- **vms-backend:** [https://github.com/17324Mahir/vms-backend](https://github.com/17324Mahir/vms-backend)
+- **vms-backend-a2:** [https://github.com/17324Mahir/vms-backend-a2](https://github.com/17324Mahir/vms-backend-a2)
