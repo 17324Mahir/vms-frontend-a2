@@ -1,0 +1,29 @@
+[build]
+  publish = "build/web"
+  command = "./scripts/build_web.sh"
+
+[build.environment]
+  # Netlify environment variables (API_BASE_URL can also be configured in Netlify UI)
+  # API_BASE_URL = "https://your-production-backend-domain.com"
+
+# Single-Page Application (SPA) fallback routing
+# Non-forced 200 rewrite allows existing static files to be served directly
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security headers for production static delivery
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# Prevent caching of index.html so users always receive latest app bundles
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
