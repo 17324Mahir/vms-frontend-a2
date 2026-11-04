@@ -2,10 +2,6 @@
 ///
 /// Reads the backend origin from the compile-time environment variable `API_BASE_URL`:
 /// `--dart-define=API_BASE_URL=http://localhost:8080`
-///
-/// NOTE:
-/// - Values compiled into a Flutter Web bundle are embedded in client JavaScript and visible to end users.
-/// - Changing `--dart-define` values requires restarting the dev server or rebuilding the web application.
 class ApiConfig {
   static const String _rawBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
@@ -37,6 +33,45 @@ class ApiConfig {
 
   /// Single vehicle resource URI: `${baseUri}/api/vehicles/{id}`
   static Uri vehicleUri(int id) => baseUri.replace(path: '/api/vehicles/$id');
+
+  /// Vehicle status update URI: `${baseUri}/api/vehicles/{id}/status`
+  static Uri vehicleStatusUri(int id) => baseUri.replace(path: '/api/vehicles/$id/status');
+
+  /// Assign driver URI: `${baseUri}/api/vehicles/{id}/assign-driver/{driverId}`
+  static Uri vehicleAssignDriverUri(int id, int driverId) =>
+      baseUri.replace(path: '/api/vehicles/$id/assign-driver/$driverId');
+
+  /// Unassign driver URI: `${baseUri}/api/vehicles/{id}/unassign-driver`
+  static Uri vehicleUnassignDriverUri(int id) =>
+      baseUri.replace(path: '/api/vehicles/$id/unassign-driver');
+
+  /// Vehicle documents URI: `${baseUri}/api/vehicles/{id}/documents`
+  static Uri vehicleDocumentsUri(int vehicleId) =>
+      baseUri.replace(path: '/api/vehicles/$vehicleId/documents');
+
+  /// Single vehicle document URI: `${baseUri}/api/vehicles/{id}/documents/{docId}`
+  static Uri vehicleDocumentUri(int vehicleId, int docId) =>
+      baseUri.replace(path: '/api/vehicles/$vehicleId/documents/$docId');
+
+  /// Vehicle maintenance collection URI: `${baseUri}/api/vehicles/{id}/maintenance`
+  static Uri vehicleMaintenanceUri(int vehicleId) =>
+      baseUri.replace(path: '/api/vehicles/$vehicleId/maintenance');
+
+  /// Single maintenance record URI: `${baseUri}/api/vehicles/{id}/maintenance/{mId}`
+  static Uri vehicleMaintenanceItemUri(int vehicleId, int mId) =>
+      baseUri.replace(path: '/api/vehicles/$vehicleId/maintenance/$mId');
+
+  /// Drivers collection URI: `${baseUri}/api/drivers`
+  static Uri get driversUri => baseUri.replace(path: '/api/drivers');
+
+  /// Single driver URI: `${baseUri}/api/drivers/{id}`
+  static Uri driverUri(int id) => baseUri.replace(path: '/api/drivers/$id');
+
+  /// Available drivers URI: `${baseUri}/api/drivers/available`
+  static Uri get availableDriversUri => baseUri.replace(path: '/api/drivers/available');
+
+  /// Dashboard statistics URI: `${baseUri}/api/dashboard/stats`
+  static Uri get dashboardStatsUri => baseUri.replace(path: '/api/dashboard/stats');
 
   /// Authentication login endpoint URI: `${baseUri}/api/auth/login`
   static Uri get authLoginUri => baseUri.replace(path: '/api/auth/login');

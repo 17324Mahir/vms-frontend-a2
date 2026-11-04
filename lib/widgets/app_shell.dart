@@ -113,15 +113,42 @@ class AppShell extends StatelessWidget {
           _buildSidebarBrand(),
           const Divider(color: AppTheme.navy800, height: 1),
           const SizedBox(height: AppTheme.space16),
-          // Active navigation destination: Vehicles (no empty placeholder destinations)
+          _buildSidebarItem(
+            icon: Icons.dashboard_rounded,
+            label: 'Dashboard',
+            isActive: title == 'Fleet Dashboard',
+            onTap: () {
+              if (title != 'Fleet Dashboard') {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRouter.dashboardRoute,
+                  (route) => false,
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 4),
           _buildSidebarItem(
             icon: Icons.directions_car_filled_rounded,
             label: 'Vehicles',
-            isActive: true,
+            isActive: title == 'Vehicles' || title.contains('Vehicle'),
             onTap: () {
               if (title != 'Vehicles') {
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   AppRouter.vehiclesRoute,
+                  (route) => false,
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 4),
+          _buildSidebarItem(
+            icon: Icons.badge_rounded,
+            label: 'Drivers',
+            isActive: title == 'Drivers' || title.contains('Driver'),
+            onTap: () {
+              if (title != 'Drivers') {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRouter.driversRoute,
                   (route) => false,
                 );
               }
@@ -278,14 +305,44 @@ class AppShell extends StatelessWidget {
             const Divider(color: AppTheme.navy800, height: 1),
             const SizedBox(height: AppTheme.space16),
             _buildSidebarItem(
+              icon: Icons.dashboard_rounded,
+              label: 'Dashboard',
+              isActive: title == 'Fleet Dashboard',
+              onTap: () {
+                Navigator.of(context).pop();
+                if (title != 'Fleet Dashboard') {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    AppRouter.dashboardRoute,
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 4),
+            _buildSidebarItem(
               icon: Icons.directions_car_filled_rounded,
               label: 'Vehicles',
-              isActive: true,
+              isActive: title == 'Vehicles' || title.contains('Vehicle'),
               onTap: () {
                 Navigator.of(context).pop();
                 if (title != 'Vehicles') {
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     AppRouter.vehiclesRoute,
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 4),
+            _buildSidebarItem(
+              icon: Icons.badge_rounded,
+              label: 'Drivers',
+              isActive: title == 'Drivers' || title.contains('Driver'),
+              onTap: () {
+                Navigator.of(context).pop();
+                if (title != 'Drivers') {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    AppRouter.driversRoute,
                     (route) => false,
                   );
                 }

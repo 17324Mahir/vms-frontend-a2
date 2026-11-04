@@ -25,6 +25,7 @@ class AppTheme {
   static const Color neutralBg = Color(0xFFF8FAFC); // Page background alias
   static const Color surfaceWhite = Color(0xFFFFFFFF); // Content cards & surfaces
   static const Color borderNeutral = Color(0xFFE2E8F0); // Subtle borders
+  static const Color borderLight = Color(0xFFE2E8F0); // Light card & table borders
   static const Color borderSubtle = Color(0xFFF1F5F9); // Table dividers / light borders
 
   // Typography Neutrals

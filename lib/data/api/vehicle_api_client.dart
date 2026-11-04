@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../../core/config/api_config.dart';
 import '../../core/errors/api_exception.dart';
+import '../../models/page_response.dart';
 import '../../models/vehicle.dart';
 import '../auth/auth_service.dart';
 
@@ -44,6 +45,43 @@ class VehicleApiClient {
           .cast<Map<String, dynamic>>()
           .map<Vehicle>(Vehicle.fromJson)
           .toList();
+    });
+  }
+
+  /// Paginated and filtered search via `GET /api/vehicles`.
+  Future<PageResponse<Vehicle>> searchVehicles({
+    int page = 0,
+    int size = 10,
+    String? search,
+    VehicleStatus? status,
+    String? company,
+    String sortBy = 'id',
+    String sortDir = 'asc',
+  }) async {
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'size': size.toString(),
+      'sortBy': sortBy,
+      'sortDir': sortDir,
+    };
+    if (search != null && search.trim().isNotEmpty) {
+      queryParams['search'] = search.trim();
+    }
+    if (status != null) {
+      queryParams['status'] = status.toBackendString();
+    }
+    if (company != null && company.trim().isNotEmpty && company != 'All Companies') {
+      queryParams['company'] = company.trim();
+    }
+
+    final uri = ApiConfig.vehiclesUri.replace(queryParameters: queryParams);
+
+    return _send('GET', uri, (response) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Expected JSON object for paginated vehicles');
+      }
+      return PageResponse.fromJson(decoded, Vehicle.fromJson);
     });
   }
 
@@ -90,6 +128,43 @@ class VehicleApiClient {
     );
   }
 
+  /// Updates vehicle operational status via `PATCH /api/vehicles/{id}/status`.
+  Future<Vehicle> updateVehicleStatus(int id, VehicleStatus status) async {
+    return _send(
+      'PATCH',
+      ApiConfig.vehicleStatusUri(id),
+      (response) {
+        final decoded = jsonDecode(response.body);
+        return Vehicle.fromJson(decoded as Map<String, dynamic>);
+      },
+      body: jsonEncode({'status': status.toBackendString()}),
+    );
+  }
+
+  /// Assigns a driver to a vehicle via `POST /api/vehicles/{id}/assign-driver/{driverId}`.
+  Future<Vehicle> assignDriver(int vehicleId, int driverId) async {
+    return _send(
+      'POST',
+      ApiConfig.vehicleAssignDriverUri(vehicleId, driverId),
+      (response) {
+        final decoded = jsonDecode(response.body);
+        return Vehicle.fromJson(decoded as Map<String, dynamic>);
+      },
+    );
+  }
+
+  /// Unassigns driver from vehicle via `POST /api/vehicles/{id}/unassign-driver`.
+  Future<Vehicle> unassignDriver(int vehicleId) async {
+    return _send(
+      'POST',
+      ApiConfig.vehicleUnassignDriverUri(vehicleId),
+      (response) {
+        final decoded = jsonDecode(response.body);
+        return Vehicle.fromJson(decoded as Map<String, dynamic>);
+      },
+    );
+  }
+
   /// Deletes a vehicle via `DELETE /api/vehicles/{id}`.
   Future<void> deleteVehicle(int id) async {
     await _send('DELETE', ApiConfig.vehicleUri(id), (_) {});
@@ -103,7 +178,6 @@ class VehicleApiClient {
   }) async {
     final requestHeaders = Map<String, String>.from(_headers);
 
-    // Only attach authorization bearer token to trusted configured backend
     final isTrustedOrigin = uri.scheme == ApiConfig.baseUri.scheme &&
         uri.host == ApiConfig.baseUri.host &&
         uri.port == ApiConfig.baseUri.port;
@@ -131,6 +205,11 @@ class VehicleApiClient {
         case 'PUT':
           response = await _client
               .put(uri, headers: requestHeaders, body: body)
+              .timeout(timeout);
+          break;
+        case 'PATCH':
+          response = await _client
+              .patch(uri, headers: requestHeaders, body: body)
               .timeout(timeout);
           break;
         case 'DELETE':
@@ -210,7 +289,7 @@ class VehicleApiClient {
         );
       }
     } catch (_) {
-      // Body is not JSON (e.g., HTML from proxy or server error)
+      // Body is not JSON
     }
 
     return ApiException(

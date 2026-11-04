@@ -133,7 +133,7 @@ class VehicleRepository extends ChangeNotifier {
   }
 
   /// Registers a new vehicle with the backend and updates local state.
-  Future<Vehicle> add(Vehicle vehicle) async {
+  Future<Vehicle> add(Vehicle vehicle, {int? assignedDriverId}) async {
     if (_isFake) {
       _vehicles.removeWhere((v) => v.id == vehicle.id && v.id != 0);
       _vehicles.insert(0, vehicle);
@@ -142,7 +142,7 @@ class VehicleRepository extends ChangeNotifier {
     }
 
     final created =
-        await _apiClient!.createVehicle(vehicle.toCreateUpdateJson());
+        await _apiClient!.createVehicle(vehicle.toCreateUpdateJson(assignedDriverId: assignedDriverId));
     _vehicles.removeWhere((v) => v.id == created.id);
     _vehicles.insert(0, created);
     notifyListeners();
@@ -150,7 +150,7 @@ class VehicleRepository extends ChangeNotifier {
   }
 
   /// Updates an existing vehicle with the backend and updates local state.
-  Future<Vehicle> update(Vehicle vehicle) async {
+  Future<Vehicle> update(Vehicle vehicle, {int? assignedDriverId}) async {
     if (_isFake) {
       final index = _vehicles.indexWhere((v) => v.id == vehicle.id);
       if (index != -1) {
@@ -162,7 +162,7 @@ class VehicleRepository extends ChangeNotifier {
 
     final updated = await _apiClient!.updateVehicle(
       vehicle.id,
-      vehicle.toCreateUpdateJson(),
+      vehicle.toCreateUpdateJson(assignedDriverId: assignedDriverId),
     );
     final index = _vehicles.indexWhere((v) => v.id == updated.id);
     if (index != -1) {
@@ -172,6 +172,84 @@ class VehicleRepository extends ChangeNotifier {
     }
     notifyListeners();
     return updated;
+  }
+
+  /// Quick status update for a vehicle.
+  Future<Vehicle> updateStatus(int id, VehicleStatus status) async {
+    if (_isFake) {
+      final v = getById(id);
+      if (v != null) {
+        final updated = v.copyWith(status: status);
+        final idx = _vehicles.indexWhere((x) => x.id == id);
+        if (idx != -1) _vehicles[idx] = updated;
+        notifyListeners();
+        return updated;
+      }
+      throw const ApiException(statusCode: 404, code: 'NOT_FOUND', message: 'Vehicle not found');
+    }
+
+    final updated = await _apiClient!.updateVehicleStatus(id, status);
+    final idx = _vehicles.indexWhere((x) => x.id == id);
+    if (idx != -1) {
+      _vehicles[idx] = updated;
+    } else {
+      _vehicles.insert(0, updated);
+    }
+    notifyListeners();
+    return updated;
+  }
+
+  /// Assigns a driver to a vehicle.
+  Future<Vehicle> assignDriver(int vehicleId, int driverId) async {
+    if (_isFake) return getById(vehicleId)!;
+    final updated = await _apiClient!.assignDriver(vehicleId, driverId);
+    final idx = _vehicles.indexWhere((x) => x.id == vehicleId);
+    if (idx != -1) {
+      _vehicles[idx] = updated;
+    }
+    notifyListeners();
+    return updated;
+  }
+
+  /// Unassigns driver from vehicle.
+  Future<Vehicle> unassignDriver(int vehicleId) async {
+    if (_isFake) return getById(vehicleId)!;
+    final updated = await _apiClient!.unassignDriver(vehicleId);
+    final idx = _vehicles.indexWhere((x) => x.id == vehicleId);
+    if (idx != -1) {
+      _vehicles[idx] = updated;
+    }
+    notifyListeners();
+    return updated;
+  }
+
+  /// Server-side paginated and filtered search.
+  Future<dynamic> searchPaged({
+    int page = 0,
+    int size = 10,
+    String? search,
+    VehicleStatus? status,
+    String? company,
+    String sortBy = 'id',
+    String sortDir = 'asc',
+  }) async {
+    if (_isFake) {
+      final filtered = query(
+        searchQuery: search,
+        statusFilter: status,
+        companyFilter: company,
+      );
+      return filtered;
+    }
+    return _apiClient!.searchVehicles(
+      page: page,
+      size: size,
+      search: search,
+      status: status,
+      company: company,
+      sortBy: sortBy,
+      sortDir: sortDir,
+    );
   }
 
   /// Deletes a vehicle by its unique ID.

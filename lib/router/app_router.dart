@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../data/auth/auth_service.dart';
+import '../models/driver.dart';
 import '../models/vehicle.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/drivers/driver_form_screen.dart';
+import '../screens/drivers/driver_list_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/vehicles/vehicle_details_screen.dart';
 import '../screens/vehicles/vehicle_form_screen.dart';
 import '../screens/vehicles/vehicle_list_screen.dart';
 import '../widgets/app_shell.dart';
@@ -14,9 +19,14 @@ class AppRouter {
   static const String homeRoute = '/';
   static const String loginRoute = '/login';
   static const String registerRoute = '/register';
+  static const String dashboardRoute = '/dashboard';
   static const String vehiclesRoute = '/vehicles';
   static const String vehicleNewRoute = '/vehicles/new';
   static const String vehicleEditRoute = '/vehicles/edit';
+  static const String vehicleDetailsRoute = '/vehicles/details';
+  static const String driversRoute = '/drivers';
+  static const String driverNewRoute = '/drivers/new';
+  static const String driverEditRoute = '/drivers/edit';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     // Public routes accessible without authentication
@@ -51,6 +61,12 @@ class AppRouter {
           builder: (_) => const RegisterScreen(),
         );
 
+      case dashboardRoute:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const DashboardScreen(),
+        );
+
       case vehiclesRoute:
         return MaterialPageRoute(
           settings: settings,
@@ -61,6 +77,25 @@ class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const VehicleFormScreen(),
+        );
+
+      case vehicleDetailsRoute:
+        final args = settings.arguments;
+        final int id;
+        if (args is int) {
+          id = args;
+        } else if (args is Vehicle) {
+          id = args.id;
+        } else if (args is String) {
+          id = int.tryParse(args) ?? 1;
+        } else if (args is Map && args['id'] != null) {
+          id = int.tryParse(args['id'].toString()) ?? 1;
+        } else {
+          id = 1;
+        }
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => VehicleDetailsScreen(vehicleId: id),
         );
 
       case vehicleEditRoute:
@@ -97,6 +132,31 @@ class AppRouter {
           builder: (_) => const _VehicleNotFoundScreen(),
         );
 
+      case driversRoute:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const DriverListScreen(),
+        );
+
+      case driverNewRoute:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const DriverFormScreen(),
+        );
+
+      case driverEditRoute:
+        final args = settings.arguments;
+        if (args is Driver) {
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => DriverFormScreen(driverToEdit: args),
+          );
+        }
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const DriverListScreen(),
+        );
+
       default:
         return MaterialPageRoute(
           settings: settings,
@@ -120,33 +180,40 @@ class _VehicleNotFoundScreen extends StatelessWidget {
         child: Card(
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.space32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.errorRed),
-                const SizedBox(height: AppTheme.space16),
-                const Text(
-                  'Vehicle Record Not Found',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textDark,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: AppTheme.errorRed,
                   ),
-                ),
-                const SizedBox(height: AppTheme.space8),
-                const Text(
-                  'The requested vehicle record could not be loaded or was removed from the registry.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                ),
-                const SizedBox(height: AppTheme.space24),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacementNamed(AppRouter.vehiclesRoute);
-                  },
-                  child: const Text('Return to Vehicles'),
-                ),
-              ],
+                  const SizedBox(height: AppTheme.space16),
+                  const Text(
+                    'Vehicle Not Found',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.space8),
+                  const Text(
+                    'The vehicle could not be loaded or may have been deleted.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: AppTheme.textMuted),
+                  ),
+                  const SizedBox(height: AppTheme.space24),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pushReplacementNamed(AppRouter.vehiclesRoute);
+                    },
+                    child: const Text('Back to Vehicles'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

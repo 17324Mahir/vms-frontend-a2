@@ -18,6 +18,36 @@ class ConfirmationDialog extends StatelessWidget {
     this.isDestructive = false,
   });
 
+  /// Generic confirmation dialog helper.
+  static Future<bool> show({
+    required BuildContext context,
+    required String title,
+    required String message,
+    String confirmLabel = 'Confirm',
+    String cancelLabel = 'Cancel',
+    bool isDestructive = false,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => ConfirmationDialog(
+        title: title,
+        isDestructive: isDestructive,
+        confirmLabel: confirmLabel,
+        cancelLabel: cancelLabel,
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontSize: 14,
+            color: AppTheme.textDark,
+            height: 1.5,
+          ),
+        ),
+      ),
+    );
+    return result ?? false;
+  }
+
   /// Displays a delete confirmation dialog identifying the vehicle by its vehicle number.
   static Future<bool> showDelete(
     BuildContext context, {

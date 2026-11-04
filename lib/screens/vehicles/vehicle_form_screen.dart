@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
+import '../../data/driver_repository.dart';
 import '../../data/mock_data.dart';
 import '../../data/vehicle_repository.dart';
+import '../../models/driver.dart';
 import '../../models/vehicle.dart';
 import '../../router/app_router.dart';
 import '../../widgets/app_shell.dart';
@@ -40,6 +42,8 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
   String? _selectedCompany;
   String? _selectedType;
   VehicleStatus _selectedStatus = VehicleStatus.active;
+  int? _selectedDriverId;
+  List<Driver> _availableDrivers = [];
 
   bool _isSaving = false;
   bool _isLoadingRecord = false;
@@ -62,6 +66,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
     _numberController = TextEditingController();
     _brandController = TextEditingController();
     _modelController = TextEditingController();
+
+    DriverRepository.instance.getAvailableDrivers().then((drivers) {
+      if (mounted) setState(() => _availableDrivers = drivers);
+    }).catchError((_) {});
 
     if (widget.vehicleToEdit != null) {
       _initFromVehicle(widget.vehicleToEdit!);
@@ -95,6 +103,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
     _brandController.text = '';
     _modelController.text = '';
     _selectedStatus = _initialStatus;
+    _selectedDriverId = null;
   }
 
   void _initFromVehicle(Vehicle v) {
@@ -112,6 +121,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
     _brandController.text = _initialBrand;
     _modelController.text = _initialModel;
     _selectedStatus = _initialStatus;
+    _selectedDriverId = v.assignedDriver?.id;
   }
 
   Future<void> _loadVehicleRecord(int id) async {
@@ -225,9 +235,9 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
     try {
       final Vehicle result;
       if (widget.isEditing && activeId != null && activeId > 0) {
-        result = await repo.update(vehicle);
+        result = await repo.update(vehicle, assignedDriverId: _selectedDriverId);
       } else {
-        result = await repo.add(vehicle);
+        result = await repo.add(vehicle, assignedDriverId: _selectedDriverId);
       }
 
       if (!mounted) return;
@@ -554,16 +564,65 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Fleet Status',
-                'Current deployment status'),
+            _buildSectionTitle('Fleet Status & Driver',
+                'Current deployment status and assigned driver'),
             const SizedBox(height: AppTheme.space16),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: _buildStatusField(),
+            Wrap(
+              spacing: AppTheme.space24,
+              runSpacing: AppTheme.space16,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: _buildStatusField(),
+                ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 360),
+                  child: _buildDriverField(),
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDriverField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Assigned Driver',
+          style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textDark),
+        ),
+        const SizedBox(height: AppTheme.space4),
+        DropdownButtonFormField<int?>(
+          initialValue: _selectedDriverId,
+          isExpanded: true,
+          decoration: const InputDecoration(
+            isDense: true,
+            border: OutlineInputBorder(),
+          ),
+          items: [
+            const DropdownMenuItem<int?>(
+              value: null,
+              child: Text('Unassigned (No Driver)', style: TextStyle(fontStyle: FontStyle.italic)),
+            ),
+            ..._availableDrivers.map((d) {
+              return DropdownMenuItem<int?>(
+                value: d.id,
+                child: Text('${d.name} (${d.licenseNumber}) - ${d.status.label}'),
+              );
+            }),
+          ],
+          onChanged: (val) {
+            setState(() => _selectedDriverId = val);
+          },
+        ),
+      ],
     );
   }
 

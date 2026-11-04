@@ -576,16 +576,17 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 880),
+          constraints: const BoxConstraints(minWidth: 950),
           child: Table(
             columnWidths: const {
-              0: FixedColumnWidth(140), // Vehicle Number
-              1: FlexColumnWidth(2.0), // Company
-              2: FixedColumnWidth(90), // Type
-              3: FlexColumnWidth(1.4), // Brand
-              4: FlexColumnWidth(1.6), // Model
-              5: FixedColumnWidth(130), // Status
-              6: FixedColumnWidth(110), // Actions
+              0: FixedColumnWidth(130), // Vehicle Number
+              1: FlexColumnWidth(1.8), // Company
+              2: FixedColumnWidth(85), // Type
+              3: FlexColumnWidth(1.2), // Brand
+              4: FlexColumnWidth(1.4), // Model
+              5: FlexColumnWidth(1.4), // Driver
+              6: FixedColumnWidth(130), // Status
+              7: FixedColumnWidth(140), // Actions
             },
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             children: [
@@ -612,6 +613,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         _buildStaticHeaderCell('TYPE'),
         _buildStaticHeaderCell('BRAND'),
         _buildStaticHeaderCell('MODEL'),
+        _buildStaticHeaderCell('DRIVER'),
         _buildStaticHeaderCell('STATUS'),
         _buildStaticHeaderCell('ACTIONS', alignRight: true),
       ],
@@ -736,12 +738,55 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
             style: const TextStyle(fontSize: 13, color: AppTheme.textDark),
           ),
         ),
-        // Status Badge
+        // Driver
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: InkWell(
+            onTap: () {
+              Navigator.of(context).pushNamed(AppRouter.vehicleDetailsRoute, arguments: vehicle.id);
+            },
+            child: Text(
+              vehicle.assignedDriver?.name ?? 'Unassigned',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: vehicle.assignedDriver != null ? FontWeight.w600 : FontWeight.normal,
+                color: vehicle.assignedDriver != null ? const Color(0xFF1D4ED8) : AppTheme.textMuted,
+              ),
+            ),
+          ),
+        ),
+        // Status Badge (Interactive quick-change menu)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Align(
             alignment: Alignment.centerLeft,
-            child: StatusBadge(status: vehicle.status),
+            child: PopupMenuButton<VehicleStatus>(
+              tooltip: 'Change Status',
+              onSelected: (newStatus) async {
+                try {
+                  await VehicleRepository.instance.updateStatus(vehicle.id, newStatus);
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update status: $e'), backgroundColor: AppTheme.errorRed),
+                    );
+                  }
+                }
+              },
+              itemBuilder: (context) => VehicleStatus.values.map((s) {
+                return PopupMenuItem(
+                  value: s,
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle, size: 10, color: s.dotColor),
+                      const SizedBox(width: 8),
+                      Text(s.label),
+                    ],
+                  ),
+                );
+              }).toList(),
+              child: StatusBadge(status: vehicle.status),
+            ),
           ),
         ),
         // Actions
@@ -751,6 +796,21 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
+              IconButton(
+                icon: const Icon(Icons.visibility_outlined, size: 18),
+                tooltip: 'View details & documents for ${vehicle.vehicleNumber}',
+                color: AppTheme.primaryBlue,
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                splashRadius: 18,
+                onPressed: () {
+                  Navigator.of(context).pushNamed(
+                    AppRouter.vehicleDetailsRoute,
+                    arguments: vehicle.id,
+                  ).then((_) => _loadVehicles(silent: true));
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 tooltip: 'Edit vehicle ${vehicle.vehicleNumber}',
@@ -831,7 +891,24 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                         ),
                       ),
                     ),
-                    StatusBadge(status: vehicle.status, compact: true),
+                    PopupMenuButton<VehicleStatus>(
+                      tooltip: 'Change Status',
+                      onSelected: (newStatus) async {
+                        try {
+                          await VehicleRepository.instance.updateStatus(vehicle.id, newStatus);
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed: $e'), backgroundColor: AppTheme.errorRed),
+                            );
+                          }
+                        }
+                      },
+                      itemBuilder: (context) => VehicleStatus.values.map((s) {
+                        return PopupMenuItem(value: s, child: Text(s.label));
+                      }).toList(),
+                      child: StatusBadge(status: vehicle.status, compact: true),
+                    ),
                   ],
                 ),
                 const SizedBox(height: AppTheme.space8),
@@ -845,13 +922,24 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${vehicle.company} · ${vehicle.type}',
+                  '${vehicle.company} · ${vehicle.type} · Driver: ${vehicle.assignedDriver?.name ?? "Unassigned"}',
                   style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
                 ),
                 const SizedBox(height: AppTheme.space12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(
+                          AppRouter.vehicleDetailsRoute,
+                          arguments: vehicle.id,
+                        ).then((_) => _loadVehicles(silent: true));
+                      },
+                      icon: const Icon(Icons.visibility_outlined, size: 16),
+                      label: const Text('Details'),
+                    ),
+                    const SizedBox(width: AppTheme.space8),
                     TextButton.icon(
                       onPressed: _deletingIds.contains(vehicle.id)
                           ? null

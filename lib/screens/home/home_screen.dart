@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(ctx);
-                      Navigator.of(context).pushNamed(AppRouter.vehiclesRoute);
+                      Navigator.of(context).pushNamed(AppRouter.dashboardRoute);
                     },
                     icon: const Icon(Icons.dashboard_rounded, size: 18),
                     label: const Text('Open Fleet Registry'),
@@ -270,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     if (isAuthenticated) ...[
                       ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.of(context).pushNamed(AppRouter.vehiclesRoute);
+                          Navigator.of(context).pushNamed(AppRouter.dashboardRoute);
                         },
                         icon: const Icon(Icons.dashboard_rounded, size: 16),
                         label: const Text('Open App'),
