@@ -3,6 +3,7 @@ import '../core/theme/app_theme.dart';
 import '../core/utils/responsive.dart';
 import '../data/auth/auth_service.dart';
 import '../router/app_router.dart';
+import 'animated/pulsing_beacon.dart';
 
 /// Top-level application shell providing persistent sidebar on desktop,
 /// collapsible drawer on mobile/tablet, user account menu, and working sign-out.
@@ -77,9 +78,37 @@ class AppShell extends StatelessWidget {
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: AppTheme.textDark,
+            letterSpacing: -0.3,
           ),
         ),
         actions: [
+          if (isDesktop) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.statusActiveBg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.statusActiveBorder),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PulsingBeacon(color: AppTheme.statusActiveText, size: 5),
+                  SizedBox(width: 6),
+                  Text(
+                    'Live Fleet Sync',
+                    style: TextStyle(
+                      color: AppTheme.statusActiveText,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppTheme.space12),
+          ],
           if (primaryAction != null) ...[
             primaryAction!,
             const SizedBox(width: AppTheme.space12),
@@ -100,18 +129,18 @@ class AppShell extends StatelessWidget {
 
   Widget _buildDesktopSidebar(BuildContext context) {
     return Container(
-      width: 250,
+      width: 256,
       decoration: const BoxDecoration(
-        color: AppTheme.navy900,
+        gradient: AppTheme.darkSidebarGradient,
         border: Border(
-          right: BorderSide(color: AppTheme.navy800, width: 1),
+          right: BorderSide(color: Color(0xFF1E293B), width: 1),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildSidebarBrand(),
-          const Divider(color: AppTheme.navy800, height: 1),
+          const Divider(color: Color(0xFF1E293B), height: 1),
           const SizedBox(height: AppTheme.space16),
           _buildSidebarItem(
             icon: Icons.dashboard_rounded,
@@ -126,7 +155,7 @@ class AppShell extends StatelessWidget {
               }
             },
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           _buildSidebarItem(
             icon: Icons.directions_car_filled_rounded,
             label: 'Vehicles',
@@ -140,7 +169,7 @@ class AppShell extends StatelessWidget {
               }
             },
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           _buildSidebarItem(
             icon: Icons.badge_rounded,
             label: 'Drivers',
@@ -155,7 +184,7 @@ class AppShell extends StatelessWidget {
             },
           ),
           const Spacer(),
-          const Divider(color: AppTheme.navy800, height: 1),
+          const Divider(color: Color(0xFF1E293B), height: 1),
           _buildSidebarFooter(context),
         ],
       ),
@@ -163,27 +192,68 @@ class AppShell extends StatelessWidget {
   }
 
   Widget _buildSidebarBrand() {
-    return const Padding(
-      padding: EdgeInsets.all(AppTheme.space24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space20, vertical: AppTheme.space24),
+      child: Row(
         children: [
-          Text(
-            'STARK GROUP',
-            style: TextStyle(
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              gradient: AppTheme.brandGradient,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.electric_car_rounded,
               color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.2,
+              size: 20,
             ),
           ),
-          SizedBox(height: 2),
-          Text(
-            'Vehicle Management System',
-            style: TextStyle(
-              color: Color(0xFF94A3B8), // Slate 400
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
+          const SizedBox(width: AppTheme.space12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'STARK VMS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Text(
+                      'A2',
+                      style: TextStyle(
+                        color: Color(0xFF38BDF8),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Fleet Command v2.0',
+                  style: TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -199,36 +269,63 @@ class AppShell extends StatelessWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12),
-      child: Material(
-        color: isActive ? AppTheme.primaryBlue : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        child: InkWell(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          gradient: isActive ? AppTheme.brandGradient : null,
+          color: isActive ? null : Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.space16,
-              vertical: AppTheme.space12,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 20,
-                  color: isActive ? Colors.white : const Color(0xFF94A3B8),
-                ),
-                const SizedBox(width: AppTheme.space12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: isActive ? Colors.white : const Color(0xFFE2E8F0),
-                      fontSize: 14,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            hoverColor: Colors.white.withValues(alpha: 0.05),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTheme.space16,
+                vertical: AppTheme.space12,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    icon,
+                    size: 20,
+                    color: isActive ? Colors.white : const Color(0xFF94A3B8),
+                  ),
+                  const SizedBox(width: AppTheme.space12),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: isActive ? Colors.white : const Color(0xFFE2E8F0),
+                        fontSize: 14,
+                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  if (isActive)
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -245,17 +342,30 @@ class AppShell extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.space16),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppTheme.primaryBlue,
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: AppTheme.primaryBlue,
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
+              const Positioned(
+                bottom: -2,
+                right: -2,
+                child: PulsingBeacon(
+                  color: Color(0xFF10B981),
+                  size: 4,
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: AppTheme.space12),
           Expanded(
@@ -372,13 +482,26 @@ class AppShell extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: AppTheme.primaryBlue,
-            child: Text(
-              initials,
-              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: AppTheme.primaryBlue,
+                child: Text(
+                  initials,
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const Positioned(
+                bottom: -1,
+                right: -1,
+                child: PulsingBeacon(
+                  color: Color(0xFF10B981),
+                  size: 3.5,
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 8),
           Text(

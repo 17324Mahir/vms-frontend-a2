@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/vehicle.dart';
+import 'animated/pulsing_beacon.dart';
 
 /// Reusable status badge chip implementing Stark Group accessible status treatments.
 ///
@@ -32,14 +33,21 @@ class StatusBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
+            if (status == VehicleStatus.active)
+              PulsingBeacon(
                 color: status.dotColor,
-                shape: BoxShape.circle,
+                size: compact ? 5 : 6,
+                isOngoing: true,
+              )
+            else
+              Container(
+                width: compact ? 5 : 6,
+                height: compact ? 5 : 6,
+                decoration: BoxDecoration(
+                  color: status.dotColor,
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
@@ -59,3 +67,4 @@ class StatusBadge extends StatelessWidget {
     );
   }
 }
+

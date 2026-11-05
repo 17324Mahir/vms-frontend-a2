@@ -3,6 +3,8 @@ import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
+import '../../widgets/animated/ambient_grid_pattern.dart';
+import '../../widgets/animated/border_beam.dart';
 
 /// Screen allowing new users to create an account for the Stark Group VMS.
 /// Follows the unified design system: light neutral canvas, crisp white card, and high-contrast typography.
@@ -156,46 +158,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.canvasLight,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.space24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Card(
-                color: AppTheme.surfaceWhite,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                  side: const BorderSide(color: AppTheme.borderNeutral),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(
-                    MediaQuery.sizeOf(context).width < 400
-                        ? AppTheme.space20
-                        : AppTheme.space32,
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Brand Header
-                        _buildBrandHeader(),
-                        const SizedBox(height: AppTheme.space20),
-                        const Divider(height: 1),
-                        const SizedBox(height: AppTheme.space20),
-
-                        // Screen Title & Subtitle
-                        const Text(
-                          'Create an Account',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textDark,
-                          ),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: AmbientGridPattern(
+              spacing: 28,
+              dotRadius: 1.0,
+              dotColor: Color(0xFFE2E8F0),
+            ),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppTheme.space24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: BorderBeam(
+                    borderRadius: AppTheme.radiusLg,
+                    beamColor: const Color(0xFF38BDF8),
+                    accentColor: AppTheme.primaryBlue,
+                    child: Card(
+                      color: AppTheme.surfaceWhite,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                        side: const BorderSide(color: AppTheme.borderNeutral),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(
+                          MediaQuery.sizeOf(context).width < 400
+                              ? AppTheme.space20
+                              : AppTheme.space32,
                         ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Brand Header
+                              _buildBrandHeader(),
+                              const SizedBox(height: AppTheme.space20),
+                              const Divider(height: 1),
+                              const SizedBox(height: AppTheme.space20),
+
+                              // Screen Title & Subtitle
+                              const Text(
+                                'Create an Account',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textDark,
+                                ),
+                              ),
                         const SizedBox(height: AppTheme.space4),
                         const Text(
                           'Enter your details below to register for the fleet portal.',
@@ -439,8 +454,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  ],
+),
+);
+}
 
   Widget _buildBrandHeader() {
     return Row(

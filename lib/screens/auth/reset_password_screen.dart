@@ -3,6 +3,8 @@ import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
+import '../../widgets/animated/ambient_grid_pattern.dart';
+import '../../widgets/animated/border_beam.dart';
 
 enum _ResetStep {
   requestOtp,
@@ -179,62 +181,78 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.canvasLight,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.space24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Card(
-                color: AppTheme.surfaceWhite,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                  side: const BorderSide(color: AppTheme.borderNeutral),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(
-                    MediaQuery.sizeOf(context).width < 400
-                        ? AppTheme.space20
-                        : AppTheme.space32,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildBrandHeader(),
-                      const SizedBox(height: AppTheme.space20),
-                      const Divider(height: 1),
-                      const SizedBox(height: AppTheme.space20),
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: AmbientGridPattern(
+              spacing: 28,
+              dotRadius: 1.0,
+              dotColor: Color(0xFFE2E8F0),
+            ),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppTheme.space24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 460),
+                  child: BorderBeam(
+                    borderRadius: AppTheme.radiusLg,
+                    beamColor: const Color(0xFF38BDF8),
+                    accentColor: AppTheme.primaryBlue,
+                    child: Card(
+                      color: AppTheme.surfaceWhite,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                        side: const BorderSide(color: AppTheme.borderNeutral),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(
+                          MediaQuery.sizeOf(context).width < 400
+                              ? AppTheme.space20
+                              : AppTheme.space32,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildBrandHeader(),
+                            const SizedBox(height: AppTheme.space20),
+                            const Divider(height: 1),
+                            const SizedBox(height: AppTheme.space20),
 
-                      // Step 1: Request OTP by Email
-                      if (_currentStep == _ResetStep.requestOtp) ...[
-                        _buildRequestOtpStep(),
-                      ] else if (_currentStep == _ResetStep.verifyOtpAndReset) ...[
-                        _buildVerifyOtpStep(),
-                      ] else if (_currentStep == _ResetStep.success) ...[
-                        _buildSuccessStep(),
-                      ],
+                            // Step 1: Request OTP by Email
+                            if (_currentStep == _ResetStep.requestOtp) ...[
+                              _buildRequestOtpStep(),
+                            ] else if (_currentStep == _ResetStep.verifyOtpAndReset) ...[
+                              _buildVerifyOtpStep(),
+                            ] else if (_currentStep == _ResetStep.success) ...[
+                              _buildSuccessStep(),
+                            ],
 
-                      const SizedBox(height: AppTheme.space16),
+                            const SizedBox(height: AppTheme.space16),
 
-                      // Back to Sign In Link
-                      Center(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).pushReplacementNamed(AppRouter.loginRoute);
-                          },
-                          icon: const Icon(Icons.arrow_back, size: 14),
-                          label: const Text('Back to Sign In', style: TextStyle(fontSize: 13)),
+                            // Back to Sign In Link
+                            Center(
+                              child: TextButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).pushReplacementNamed(AppRouter.loginRoute);
+                                },
+                                icon: const Icon(Icons.arrow_back, size: 14),
+                                label: const Text('Back to Sign In', style: TextStyle(fontSize: 13)),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

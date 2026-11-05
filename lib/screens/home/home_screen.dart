@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
+import '../../widgets/animated/ambient_grid_pattern.dart';
+import '../../widgets/animated/border_beam.dart';
+import '../../widgets/animated/pulsing_beacon.dart';
 
 /// Simplified, professional public landing page for Stark Group VMS.
 ///
@@ -342,43 +345,57 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     return Container(
       color: AppTheme.canvasLight,
-      padding: EdgeInsets.symmetric(
-        horizontal: isDesktop ? AppTheme.space32 : AppTheme.space20,
-        vertical: isDesktop ? 48 : 32,
-      ),
-      alignment: Alignment.center,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 1200),
-        child: FadeTransition(
-          opacity: _heroFadeAnimation,
-          child: SlideTransition(
-            position: _heroSlideAnimation,
-            child: isDesktop
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Left: Headline, Subtitle, Actions
-                      Expanded(
-                        flex: 6,
-                        child: _buildHeroLeftContent(context, isAuthenticated),
-                      ),
-                      const SizedBox(width: 48),
-                      // Right: Mock Fleet Dashboard Preview Card
-                      Expanded(
-                        flex: 5,
-                        child: _buildHeroMockPreviewCard(),
-                      ),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _buildHeroLeftContent(context, isAuthenticated),
-                      const SizedBox(height: 32),
-                      _buildHeroMockPreviewCard(),
-                    ],
-                  ),
+      child: Stack(
+        children: [
+          const Positioned.fill(
+            child: AmbientGridPattern(
+              spacing: 28,
+              dotRadius: 1.0,
+              dotColor: Color(0xFFE2E8F0),
+            ),
           ),
-        ),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? AppTheme.space32 : AppTheme.space20,
+              vertical: isDesktop ? 48 : 32,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: FadeTransition(
+                  opacity: _heroFadeAnimation,
+                  child: SlideTransition(
+                    position: _heroSlideAnimation,
+                    child: isDesktop
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Left: Headline, Subtitle, Actions
+                              Expanded(
+                                flex: 6,
+                                child: _buildHeroLeftContent(context, isAuthenticated),
+                              ),
+                              const SizedBox(width: 48),
+                              // Right: Mock Fleet Dashboard Preview Card
+                              Expanded(
+                                flex: 5,
+                                child: _buildHeroMockPreviewCard(),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              _buildHeroLeftContent(context, isAuthenticated),
+                              const SizedBox(height: 32),
+                              _buildHeroMockPreviewCard(),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -390,6 +407,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Column(
       crossAxisAlignment: isSmall ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: AppTheme.space16),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppTheme.statusActiveBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppTheme.statusActiveBorder),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const PulsingBeacon(color: AppTheme.statusActiveText, size: 5),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  isSmall ? 'Fleet Architecture v2' : 'Assignment 2 • Advanced Fleet Architecture',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.statusActiveText,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         // Headline
         Text(
           'Fleet Operations &\nVehicle Management',
@@ -475,132 +520,137 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   /// Visual code-built preview of fleet registry using purely fictional data.
   /// Strictly does NOT fetch real production data.
   Widget _buildHeroMockPreviewCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderNeutral),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 16,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(AppTheme.space20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Preview Card Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF59E0B),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Flexible(
-                      child: Text(
-                        'Fleet Registry Preview',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textDark,
+    return BorderBeam(
+      borderRadius: 14,
+      beamColor: const Color(0xFF38BDF8),
+      accentColor: AppTheme.primaryBlue,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceWhite,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.borderNeutral),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(AppTheme.space20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Preview Card Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEF4444),
+                          shape: BoxShape.circle,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 5),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF59E0B),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Flexible(
+                        child: Text(
+                          'Fleet Registry Preview',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.canvasLight,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: AppTheme.borderNeutral),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.canvasLight,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: AppTheme.borderNeutral),
+                  ),
+                  child: const Text(
+                    'Fictional Mock Data',
+                    style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                  ),
                 ),
-                child: const Text(
-                  'Fictional Mock Data',
-                  style: TextStyle(fontSize: 10, color: AppTheme.textMuted),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.space16),
+              ],
+            ),
+            const SizedBox(height: AppTheme.space16),
 
-          // KPI Mini Cards Row
-          Row(
-            children: [
-              _buildMockKpiChip('Total Fleet', '24', AppTheme.primaryBlue),
-              const SizedBox(width: 8),
-              _buildMockKpiChip('Active', '21', AppTheme.statusActiveText),
-              const SizedBox(width: 8),
-              _buildMockKpiChip('Maintenance', '3', AppTheme.statusMaintenanceText),
-            ],
-          ),
-          const SizedBox(height: AppTheme.space16),
+            // KPI Mini Cards Row
+            Row(
+              children: [
+                _buildMockKpiChip('Total Fleet', '24', AppTheme.primaryBlue),
+                const SizedBox(width: 8),
+                _buildMockKpiChip('Active', '21', AppTheme.statusActiveText),
+                const SizedBox(width: 8),
+                _buildMockKpiChip('Maintenance', '3', AppTheme.statusMaintenanceText),
+              ],
+            ),
+            const SizedBox(height: AppTheme.space16),
 
-          // Sample Vehicle Rows
-          _buildMockVehicleRow(
-            vin: 'STK-0042',
-            model: 'Audi R8 V10 Plus',
-            company: 'Stark Industries',
-            status: 'ACTIVE',
-            statusBg: AppTheme.statusActiveBg,
-            statusColor: AppTheme.statusActiveText,
-            statusBorder: AppTheme.statusActiveBorder,
-          ),
-          const SizedBox(height: 8),
-          _buildMockVehicleRow(
-            vin: 'STK-0108',
-            model: 'Tesla Model S Plaid',
-            company: 'Stark Logistics',
-            status: 'ACTIVE',
-            statusBg: AppTheme.statusActiveBg,
-            statusColor: AppTheme.statusActiveText,
-            statusBorder: AppTheme.statusActiveBorder,
-          ),
-          const SizedBox(height: 8),
-          _buildMockVehicleRow(
-            vin: 'STK-0720',
-            model: 'Oshkosh M-ATV',
-            company: 'Stark Defense',
-            status: 'MAINTENANCE',
-            statusBg: AppTheme.statusMaintenanceBg,
-            statusColor: AppTheme.statusMaintenanceText,
-            statusBorder: AppTheme.statusMaintenanceBorder,
-          ),
-        ],
+            // Sample Vehicle Rows
+            _buildMockVehicleRow(
+              vin: 'STK-0042',
+              model: 'Audi R8 V10 Plus',
+              company: 'Stark Industries',
+              status: 'ACTIVE',
+              statusBg: AppTheme.statusActiveBg,
+              statusColor: AppTheme.statusActiveText,
+              statusBorder: AppTheme.statusActiveBorder,
+            ),
+            const SizedBox(height: 8),
+            _buildMockVehicleRow(
+              vin: 'STK-0108',
+              model: 'Tesla Model S Plaid',
+              company: 'Stark Logistics',
+              status: 'ACTIVE',
+              statusBg: AppTheme.statusActiveBg,
+              statusColor: AppTheme.statusActiveText,
+              statusBorder: AppTheme.statusActiveBorder,
+            ),
+            const SizedBox(height: 8),
+            _buildMockVehicleRow(
+              vin: 'STK-0720',
+              model: 'Oshkosh M-ATV',
+              company: 'Stark Defense',
+              status: 'MAINTENANCE',
+              statusBg: AppTheme.statusMaintenanceBg,
+              statusColor: AppTheme.statusMaintenanceText,
+              statusBorder: AppTheme.statusMaintenanceBorder,
+            ),
+          ],
+        ),
       ),
     );
   }

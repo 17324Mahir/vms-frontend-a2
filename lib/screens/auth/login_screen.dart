@@ -4,6 +4,8 @@ import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
+import '../../widgets/animated/ambient_grid_pattern.dart';
+import '../../widgets/animated/border_beam.dart';
 
 /// Admin Login screen for the Stark Group VMS.
 ///
@@ -91,69 +93,85 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.neutralBg,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.space24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                  side: const BorderSide(color: AppTheme.borderNeutral),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(
-                    MediaQuery.sizeOf(context).width < 400
-                        ? AppTheme.space20
-                        : AppTheme.space32,
-                  ),
-                  child: AutofillGroup(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildBrandHeader(),
-                        const SizedBox(height: AppTheme.space24),
-                        const Divider(height: 1),
-                        const SizedBox(height: AppTheme.space24),
-                        ValueListenableBuilder<String?>(
-                          valueListenable: AuthService.instance.sessionExpiredMessage,
-                          builder: (context, sessionNotice, _) {
-                            if (sessionNotice != null) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: AppTheme.space16),
-                                child: _buildSessionNoticeAlert(sessionNotice),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: AmbientGridPattern(
+              spacing: 28,
+              dotRadius: 1.0,
+              dotColor: Color(0xFFE2E8F0),
+            ),
+          ),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppTheme.space24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: BorderBeam(
+                    borderRadius: AppTheme.radiusLg,
+                    beamColor: const Color(0xFF38BDF8),
+                    accentColor: AppTheme.primaryBlue,
+                    child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                        side: const BorderSide(color: AppTheme.borderNeutral),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(
+                          MediaQuery.sizeOf(context).width < 400
+                              ? AppTheme.space20
+                              : AppTheme.space32,
                         ),
-                        if (_authErrorMessage != null) ...[
-                          _buildAuthErrorAlert(_authErrorMessage!),
-                          const SizedBox(height: AppTheme.space16),
-                        ],
-                        _buildEmailField(),
-                        const SizedBox(height: AppTheme.space16),
-                        _buildPasswordField(),
-                        const SizedBox(height: AppTheme.space24),
-                        _buildSubmitButton(),
-                        const SizedBox(height: AppTheme.space16),
-                        _buildDemoCredentialsBox(),
-                        const SizedBox(height: AppTheme.space16),
-                        _buildRegisterLink(),
-                      ],
+                        child: AutofillGroup(
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildBrandHeader(),
+                                const SizedBox(height: AppTheme.space24),
+                                const Divider(height: 1),
+                                const SizedBox(height: AppTheme.space24),
+                                ValueListenableBuilder<String?>(
+                                  valueListenable: AuthService.instance.sessionExpiredMessage,
+                                  builder: (context, sessionNotice, _) {
+                                    if (sessionNotice != null) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: AppTheme.space16),
+                                        child: _buildSessionNoticeAlert(sessionNotice),
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
+                                ),
+                                if (_authErrorMessage != null) ...[
+                                  _buildAuthErrorAlert(_authErrorMessage!),
+                                  const SizedBox(height: AppTheme.space16),
+                                ],
+                                _buildEmailField(),
+                                const SizedBox(height: AppTheme.space16),
+                                _buildPasswordField(),
+                                const SizedBox(height: AppTheme.space24),
+                                _buildSubmitButton(),
+                                const SizedBox(height: AppTheme.space16),
+                                _buildDemoCredentialsBox(),
+                                const SizedBox(height: AppTheme.space16),
+                                _buildRegisterLink(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
