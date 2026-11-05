@@ -4,7 +4,6 @@ import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
 import '../../widgets/animated/ambient_grid_pattern.dart';
 import '../../widgets/animated/border_beam.dart';
-import '../../widgets/animated/pulsing_beacon.dart';
 
 /// Simplified, professional public landing page for Stark Group VMS.
 ///
@@ -407,34 +406,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Column(
       crossAxisAlignment: isSmall ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: AppTheme.space16),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppTheme.statusActiveBg,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppTheme.statusActiveBorder),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const PulsingBeacon(color: AppTheme.statusActiveText, size: 5),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  isSmall ? 'Fleet Architecture v2' : 'Assignment 2 • Advanced Fleet Architecture',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppTheme.statusActiveText,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
         // Headline
         Text(
           'Fleet Operations &\nVehicle Management',
