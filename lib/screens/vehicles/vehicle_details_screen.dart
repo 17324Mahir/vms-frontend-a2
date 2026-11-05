@@ -12,7 +12,6 @@ import '../../models/vehicle.dart';
 import '../../models/vehicle_document.dart';
 import '../../router/app_router.dart';
 import '../../widgets/animated/ambient_grid_pattern.dart';
-import '../../widgets/animated/animated_counter.dart';
 import '../../widgets/animated/spotlight_hover_card.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/confirmation_dialog.dart';

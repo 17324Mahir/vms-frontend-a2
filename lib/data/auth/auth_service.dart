@@ -7,6 +7,7 @@ import '../../core/config/api_config.dart';
 import '../../core/errors/api_exception.dart';
 import '../../models/auth_session.dart';
 import '../../models/auth_user.dart';
+import '../driver_repository.dart';
 import '../vehicle_repository.dart';
 
 /// Centralized service managing client-side authentication, session state, and JWT bearer tokens.
@@ -143,6 +144,7 @@ class AuthService {
           sessionId: ++_sessionCounter,
         );
 
+        _clearLocalCaches();
         _currentSession = session;
         sessionExpiredMessage.value = null;
         sessionNotifier.value = session;
@@ -221,6 +223,7 @@ class AuthService {
           sessionId: ++_sessionCounter,
         );
 
+        _clearLocalCaches();
         _currentSession = session;
         sessionExpiredMessage.value = null;
         sessionNotifier.value = session;
@@ -494,7 +497,13 @@ class AuthService {
     if (reason != null) {
       sessionExpiredMessage.value = reason;
     }
+    _clearLocalCaches();
+  }
+
+  /// Flushes all cached vehicle and driver fleet records across active repositories.
+  void _clearLocalCaches() {
     VehicleRepository.instance.clearCache();
+    DriverRepository.instance.clearCache();
   }
 
   void clearExpiredNotice() {

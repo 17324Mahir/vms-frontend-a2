@@ -27,6 +27,20 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isSubmitting = false;
   String? _authErrorMessage;
+  bool _initializedFromArgs = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initializedFromArgs) {
+      _initializedFromArgs = true;
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args is String && args.isNotEmpty && _emailController.text.isEmpty) {
+        _emailController.text = args;
+        _passwordFocusNode.requestFocus();
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -272,6 +286,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildAuthErrorAlert(String message) {
+    final currentEmail = _emailController.text.trim();
+    final isInvalidCreds = message.toLowerCase().contains('incorrect') || message.toLowerCase().contains('invalid');
+
     return Container(
       padding: const EdgeInsets.all(AppTheme.space12),
       decoration: BoxDecoration(
@@ -279,25 +296,58 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         border: Border.all(color: AppTheme.errorRedBorder),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.error_outline_rounded,
-            size: 18,
-            color: AppTheme.errorRed,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                fontSize: 13,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 18,
                 color: AppTheme.errorRed,
-                fontWeight: FontWeight.w500,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.errorRed,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (isInvalidCreds && currentEmail.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () {
+                Navigator.of(context).pushReplacementNamed(
+                  AppRouter.registerRoute,
+                  arguments: currentEmail,
+                );
+              },
+              child: Row(
+                children: const [
+                  Icon(Icons.person_add_outlined, size: 14, color: AppTheme.primaryBlue),
+                  SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Don\'t have an account? Register as new user',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.primaryBlue,
+                        fontWeight: FontWeight.w600,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -503,7 +553,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pushReplacementNamed(AppRouter.registerRoute);
+                final email = _emailController.text.trim();
+                Navigator.of(context).pushReplacementNamed(
+                  AppRouter.registerRoute,
+                  arguments: email.isNotEmpty ? email : null,
+                );
               },
               child: const Text('Register here', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
