@@ -5,6 +5,7 @@ import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
 import '../../widgets/animated/ambient_grid_pattern.dart';
 import '../../widgets/animated/border_beam.dart';
+import '../../widgets/brand/stark_logo.dart';
 
 enum _ResetStep {
   requestOtp,
@@ -258,42 +259,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Widget _buildBrandHeader() {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.navy900,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          ),
-          child: const Text(
-            'STARK GROUP',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              letterSpacing: 1.1,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: AppTheme.borderSubtle,
-            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-            border: Border.all(color: AppTheme.borderNeutral),
-          ),
-          child: const Text(
-            'VMS',
-            style: TextStyle(
-              color: AppTheme.textMuted,
-              fontWeight: FontWeight.bold,
-              fontSize: 11,
-            ),
-          ),
-        ),
-      ],
+    return const StarkLogo.light(
+      size: StarkLogoSize.medium,
+      showBadge: true,
     );
   }
 

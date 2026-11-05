@@ -4,6 +4,7 @@ import '../core/utils/responsive.dart';
 import '../data/auth/auth_service.dart';
 import '../router/app_router.dart';
 import 'animated/pulsing_beacon.dart';
+import 'brand/stark_logo.dart';
 
 /// Top-level application shell providing persistent sidebar on desktop,
 /// collapsible drawer on mobile/tablet, user account menu, and working sign-out.
@@ -192,71 +193,14 @@ class AppShell extends StatelessWidget {
   }
 
   Widget _buildSidebarBrand() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space20, vertical: AppTheme.space24),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              gradient: AppTheme.brandGradient,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryBlue.withValues(alpha: 0.4),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.electric_car_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: AppTheme.space12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'STARK VMS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'A2',
-                      style: TextStyle(
-                        color: Color(0xFF38BDF8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Fleet Command v2.0',
-                  style: TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space20),
+      child: StarkLogo.dark(
+        size: StarkLogoSize.medium,
+        title: 'STARK GROUP',
+        subtitle: 'Vehicle Management System',
+        badge: 'VMS',
+        showBadge: true,
       ),
     );
   }

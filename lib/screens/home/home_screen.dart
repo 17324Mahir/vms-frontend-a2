@@ -4,6 +4,7 @@ import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
 import '../../widgets/animated/ambient_grid_pattern.dart';
 import '../../widgets/animated/border_beam.dart';
+import '../../widgets/brand/stark_logo.dart';
 
 /// Simplified, professional public landing page for Stark Group VMS.
 ///
@@ -85,14 +86,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'STARK GROUP VMS',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.1,
-                        color: AppTheme.textDark,
-                      ),
+                    const StarkLogo.light(
+                      size: StarkLogoSize.small,
+                      title: 'STARK GROUP VMS',
+                      showBadge: false,
+                      showSubtitle: false,
                     ),
                     IconButton(
                       icon: const Icon(Icons.close, color: AppTheme.textMuted, size: 20),
@@ -225,43 +223,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Brand Treatment
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 20),
-                  ),
-                  const SizedBox(width: AppTheme.space12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        'STARK GROUP',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.1,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        'Vehicle Management System',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF94A3B8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              const StarkLogo.dark(
+                size: StarkLogoSize.medium,
+                showBadge: true,
               ),
 
               // Action Buttons
@@ -406,16 +370,47 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Column(
       crossAxisAlignment: isSmall ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
+        // Stark Group Brand Kicker on Front Hero
+        Container(
+          margin: const EdgeInsets.only(bottom: AppTheme.space16),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryBlueSubtle,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFBFDBFE)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const StarkEmblem(size: 14),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  isSmall ? 'STARK FLEET PORTAL' : 'STARK GROUP • FLEET PORTAL',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.primaryBlue,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
         // Headline
         Text(
           'Fleet Operations &\nVehicle Management',
           textAlign: isSmall ? TextAlign.center : TextAlign.left,
           style: TextStyle(
-            fontSize: isSmall ? 28 : 38,
-            fontWeight: FontWeight.w800,
+            fontSize: isSmall ? 28 : 40,
+            fontWeight: FontWeight.w900,
             color: AppTheme.textDark,
-            letterSpacing: -0.7,
-            height: 1.18,
+            letterSpacing: -0.8,
+            height: 1.15,
           ),
         ),
         const SizedBox(height: AppTheme.space16),
@@ -825,12 +820,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
       alignment: Alignment.center,
-      child: const Text(
-        '© Stark Group. Vehicle Management System.',
-        style: TextStyle(
-          fontSize: 12,
-          color: Color(0xFF94A3B8),
-        ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          StarkEmblem(size: 16),
+          SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              '© Stark Group. Vehicle Management System.',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

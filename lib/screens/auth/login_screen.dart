@@ -6,6 +6,7 @@ import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
 import '../../widgets/animated/ambient_grid_pattern.dart';
 import '../../widgets/animated/border_beam.dart';
+import '../../widgets/brand/stark_logo.dart';
 
 /// Admin Login screen for the Stark Group VMS.
 ///
@@ -191,48 +192,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildBrandHeader() {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.navy900,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-              ),
-              child: const Text(
-                'STARK GROUP',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                  letterSpacing: 1.1,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppTheme.borderSubtle,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                border: Border.all(color: AppTheme.borderNeutral),
-              ),
-              child: const Text(
-                'VMS',
-                style: TextStyle(
-                  color: AppTheme.textMuted,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ],
+        StarkLogo.light(
+          size: StarkLogoSize.medium,
+          showBadge: true,
         ),
-        const SizedBox(height: AppTheme.space16),
-        const Text(
+        SizedBox(height: AppTheme.space16),
+        Text(
           'Sign in to your account',
           style: TextStyle(
             fontSize: 20,
@@ -240,8 +208,8 @@ class _LoginScreenState extends State<LoginScreen> {
             color: AppTheme.textDark,
           ),
         ),
-        const SizedBox(height: AppTheme.space4),
-        const Text(
+        SizedBox(height: AppTheme.space4),
+        Text(
           'Enter your credentials to access the fleet registry.',
           style: TextStyle(
             fontSize: 13,
