@@ -52,19 +52,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _fillUniqueNewAccount() {
-    final rand = DateTime.now().millisecondsSinceEpoch % 100000;
-    setState(() {
-      _nameController.text = 'Fleet Operator';
-      _emailController.text = 'operator$rand@starkfleet.com';
-      _passwordController.text = 'Password123!';
-      _confirmPasswordController.text = 'Password123!';
-      _emailAlreadyExists = false;
-      _existingEmail = null;
-      _errorMessage = null;
-    });
-  }
-
   @override
   void dispose() {
     _emailFocusNode.removeListener(_onEmailFocusChange);
@@ -247,10 +234,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         // Security Advisory banner
                         _buildSecurityAdvisory(),
-                        const SizedBox(height: AppTheme.space12),
-
-                        // Quick 1-Click New Account Helper
-                        _buildQuickRegistrationHelper(),
                         const SizedBox(height: AppTheme.space16),
 
                         // Account Already Exists by Email Banner
@@ -412,22 +395,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: AppTheme.space12),
-
-                        // Pre-fill Safe Test Password Helper
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            _passwordController.text = 'Password123!';
-                            _confirmPasswordController.text = 'Password123!';
-                          },
-                          icon: const Icon(Icons.flash_on_rounded, size: 16),
-                          label: const Text('Fill Test Password (Password123!)', style: TextStyle(fontSize: 12)),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            side: const BorderSide(color: AppTheme.borderNeutral),
-                          ),
-                        ),
-                        const SizedBox(height: AppTheme.space20),
+                        const SizedBox(height: AppTheme.space24),
 
                         // Submit Register Button
                         ElevatedButton(
@@ -560,54 +528,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildQuickRegistrationHelper() {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.space12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4), // Emerald 50
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        border: Border.all(color: const Color(0xFFBBF7D0)), // Emerald 200
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.flash_on_rounded, size: 20, color: Color(0xFF059669)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Quick-Fill Unique Account',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF065F46),
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Generate unique credentials with 0 conflicts.',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF047857)),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: _fillUniqueNewAccount,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-            child: const Text('Auto-Fill'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildAccountExistsAlert(String email) {
     return Container(
       padding: const EdgeInsets.all(AppTheme.space12),
@@ -624,7 +544,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFD97706)),
               SizedBox(width: 8),
               Text(
-                'Existing Account Detected',
+                'Account Already Exists',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
@@ -650,27 +570,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     );
                   },
                   icon: const Icon(Icons.login_rounded, size: 14),
-                  label: const Text('Sign In to Account'),
+                  label: const Text('Sign In'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.navy900,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _fillUniqueNewAccount,
-                  icon: const Icon(Icons.refresh_rounded, size: 14),
-                  label: const Text('Use New Email'),
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(
+                      AppRouter.resetPasswordRoute,
+                      arguments: email,
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF92400E),
                     side: const BorderSide(color: Color(0xFFD97706)),
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
+                  child: const Text('Reset Password'),
                 ),
               ),
             ],

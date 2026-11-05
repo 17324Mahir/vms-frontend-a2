@@ -49,15 +49,14 @@ void main() {
 
       expect(find.text('Create an Account'), findsOneWidget);
       expect(find.textContaining('Security Advisory: This is an educational demo portal'), findsOneWidget);
-      expect(find.text('Fill Test Password (Password123!)'), findsOneWidget);
 
-      // Ensure button is visible in scrollview and tap
-      await tester.ensureVisible(find.text('Fill Test Password (Password123!)'));
-      await tester.tap(find.text('Fill Test Password (Password123!)'));
+      // Verify all 4 registration input fields (Name, Email, Password, Confirm Password)
+      expect(find.byType(TextFormField), findsNWidgets(4));
+      await tester.enterText(find.byType(TextFormField).at(2), 'Password123!');
+      await tester.enterText(find.byType(TextFormField).at(3), 'Password123!');
       await tester.pumpAndSettle();
 
-      // Password fields should now have Password123!
-      expect(find.byType(TextFormField), findsNWidgets(4));
+      expect(find.text('Password123!'), findsNWidgets(2));
     });
   });
 }
