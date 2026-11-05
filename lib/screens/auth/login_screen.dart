@@ -460,7 +460,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 6),
           const Text(
-            '💡 Fleet demo portal: Do not enter personal Google passwords. Use demo credentials or test passwords.',
+            '💡 Demo Security Tip: Do not enter your personal Google/Gmail password. Use a demo fleet password (e.g. Password123!). Reusing your Google password on external test domains triggers Chrome\'s password reuse warning dialog (click "Ignore" to proceed).',
             style: TextStyle(
               fontSize: 10.5,
               color: AppTheme.textMuted,
