@@ -5,6 +5,7 @@ import '../models/driver.dart';
 import '../models/vehicle.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/reset_password_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/drivers/driver_form_screen.dart';
 import '../screens/drivers/driver_list_screen.dart';
@@ -19,6 +20,8 @@ class AppRouter {
   static const String homeRoute = '/';
   static const String loginRoute = '/login';
   static const String registerRoute = '/register';
+  static const String resetPasswordRoute = '/reset-password';
+  static const String forgotPasswordRoute = '/forgot-password';
   static const String dashboardRoute = '/dashboard';
   static const String vehiclesRoute = '/vehicles';
   static const String vehicleNewRoute = '/vehicles/new';
@@ -32,7 +35,9 @@ class AppRouter {
     // Public routes accessible without authentication
     final isPublic = settings.name == homeRoute ||
         settings.name == loginRoute ||
-        settings.name == registerRoute;
+        settings.name == registerRoute ||
+        settings.name == resetPasswordRoute ||
+        settings.name == forgotPasswordRoute;
 
     // Route guard: require active in-memory session for all protected routes
     if (!isPublic && !AuthService.instance.isAuthenticated) {
@@ -59,6 +64,14 @@ class AppRouter {
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const RegisterScreen(),
+        );
+
+      case resetPasswordRoute:
+      case forgotPasswordRoute:
+        final initialEmail = settings.arguments is String ? settings.arguments as String : null;
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => ResetPasswordScreen(initialEmail: initialEmail),
         );
 
       case dashboardRoute:

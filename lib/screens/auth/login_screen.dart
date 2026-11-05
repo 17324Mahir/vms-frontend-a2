@@ -328,13 +328,39 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Password',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textDark,
-          ),
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            const Text(
+              'Password',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textDark,
+              ),
+            ),
+            InkWell(
+              onTap: () {
+                Navigator.of(context).pushNamed(
+                  AppRouter.resetPasswordRoute,
+                  arguments: _emailController.text.trim(),
+                );
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                child: Text(
+                  'Forgot password?',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.primaryBlue,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: AppTheme.space4),
         TextFormField(
@@ -431,6 +457,15 @@ class _LoginScreenState extends State<LoginScreen> {
               side: const BorderSide(color: AppTheme.primaryBlue),
             ),
             child: const Text('Auto-fill Demo Credentials', style: TextStyle(fontSize: 12)),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '💡 Fleet demo portal: Do not enter personal Google passwords. Use demo credentials or test passwords.',
+            style: TextStyle(
+              fontSize: 10.5,
+              color: AppTheme.textMuted,
+              height: 1.3,
+            ),
           ),
         ],
       ),

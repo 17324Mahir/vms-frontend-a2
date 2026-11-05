@@ -272,6 +272,84 @@ class AuthService {
     );
   }
 
+  /// Direct in-app password reset against `POST /api/auth/reset-password`.
+  Future<String> resetPassword(
+    String email,
+    String newPassword, {
+    http.Client? client,
+    Duration timeout = const Duration(seconds: 45),
+  }) async {
+    final httpClient = client ?? http.Client();
+    final isCustomClient = client != null;
+
+    try {
+      final response = await httpClient
+          .post(
+            ApiConfig.authResetPasswordUri,
+            headers: const {
+              'Content-Type': 'application/json; charset=UTF-8',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'email': email.trim(),
+              'newPassword': newPassword.trim(),
+            }),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return decoded['message'] as String? ?? 'Password has been successfully updated.';
+        }
+        return 'Password has been successfully updated.';
+      }
+
+      throw _parseResetPasswordError(response);
+    } on TimeoutException catch (e) {
+      throw NetworkException(
+        'The server is taking longer than usual to respond. Please wait a moment and try again.',
+        e,
+      );
+    } on SocketException catch (e) {
+      throw NetworkException(
+        'Unable to connect to the password reset service. Please check your network connection.',
+        e,
+      );
+    } on http.ClientException catch (e) {
+      throw NetworkException(
+        'Network error during password reset: ${e.message}',
+        e,
+      );
+    } finally {
+      if (!isCustomClient) {
+        httpClient.close();
+      }
+    }
+  }
+
+  ApiException _parseResetPasswordError(http.Response response) {
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map<String, dynamic>) {
+        final code = decoded['code'] as String? ?? 'HTTP_${response.statusCode}';
+        final message = decoded['message'] as String? ?? 'Password reset failed.';
+        return ApiException(
+          statusCode: (decoded['status'] as num?)?.toInt() ?? response.statusCode,
+          code: code,
+          message: message,
+          path: decoded['path'] as String?,
+        );
+      }
+    } catch (_) {}
+
+    return ApiException(
+      statusCode: response.statusCode,
+      code: 'HTTP_${response.statusCode}',
+      message: 'Password reset failed with status code ${response.statusCode}.',
+    );
+  }
+
   /// Centrally handles 401 Unauthorized responses emitted by protected API endpoints.
   /// Prevents race conditions from older expired requests clearing a newer active session.
   void handleUnauthorized({int? forSessionId, String? reason}) {
