@@ -89,7 +89,7 @@ class AuthService {
     try {
       final client = http.Client();
       await client
-          .get(ApiConfig.baseUri.replace(path: '/actuator/health'))
+          .get(ApiConfig.baseUri.replace(path: '/api'))
           .timeout(const Duration(seconds: 45));
       client.close();
     } catch (_) {
