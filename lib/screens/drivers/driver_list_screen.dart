@@ -3,6 +3,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/driver_repository.dart';
 import '../../models/driver.dart';
 import '../../router/app_router.dart';
+import '../../widgets/animated/spotlight_hover_card.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/confirmation_dialog.dart';
 
@@ -124,7 +125,7 @@ class _DriverListScreenState extends State<DriverListScreen> {
         icon: const Icon(Icons.add, size: 18),
         label: const Text('Add Driver'),
         style: FilledButton.styleFrom(
-          backgroundColor: AppTheme.navy900,
+          backgroundColor: AppTheme.primaryBlue,
           foregroundColor: Colors.white,
         ),
       ),
@@ -262,13 +263,9 @@ class _DriverListScreenState extends State<DriverListScreen> {
       separatorBuilder: (_, _) => const SizedBox(height: AppTheme.space8),
       itemBuilder: (context, i) {
         final d = _drivers[i];
-        return Container(
+        return SpotlightHoverCard(
           padding: const EdgeInsets.all(AppTheme.space16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            border: Border.all(color: AppTheme.borderLight),
-          ),
+          borderRadius: AppTheme.radiusMd,
           child: Row(
             children: [
               CircleAvatar(

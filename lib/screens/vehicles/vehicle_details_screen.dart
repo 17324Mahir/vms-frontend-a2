@@ -11,6 +11,9 @@ import '../../models/maintenance_record.dart';
 import '../../models/vehicle.dart';
 import '../../models/vehicle_document.dart';
 import '../../router/app_router.dart';
+import '../../widgets/animated/ambient_grid_pattern.dart';
+import '../../widgets/animated/animated_counter.dart';
+import '../../widgets/animated/spotlight_hover_card.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/status_badge.dart';
@@ -648,92 +651,112 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
 
   Widget _buildVehicleHeaderCard(Vehicle v) {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.space20),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: AppTheme.borderLight)),
+        border: Border(bottom: BorderSide(color: AppTheme.borderNeutral)),
       ),
-      child: Wrap(
-        spacing: AppTheme.space24,
-        runSpacing: AppTheme.space16,
-        alignment: WrapAlignment.spaceBetween,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      child: Stack(
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: AppTheme.navy900,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                ),
-                child: const Icon(Icons.directions_car_filled_rounded, color: Colors.white, size: 28),
-              ),
-              const SizedBox(width: AppTheme.space16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        v.vehicleNumber,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.textDark),
-                      ),
-                      const SizedBox(width: AppTheme.space12),
-                      StatusBadge(status: v.status),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${v.brandModel} • ${v.type} • ${v.company}',
-                    style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
-                  ),
-                ],
-              ),
-            ],
+          const Positioned.fill(
+            child: AmbientGridPattern(
+              spacing: 24,
+              dotRadius: 1.0,
+              dotColor: Color(0xFFE2E8F0),
+            ),
           ),
-          Wrap(
-            spacing: AppTheme.space12,
-            runSpacing: AppTheme.space8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              // Operational Status Quick Action
-              PopupMenuButton<VehicleStatus>(
-                tooltip: 'Change Status',
-                onSelected: _handleStatusChange,
-                itemBuilder: (context) => VehicleStatus.values.map((s) {
-                  return PopupMenuItem(
-                    value: s,
-                    child: Row(
+          Padding(
+            padding: const EdgeInsets.all(AppTheme.space20),
+            child: Wrap(
+              spacing: AppTheme.space24,
+              runSpacing: AppTheme.space16,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.brandGradient,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.directions_car_filled_rounded, color: Colors.white, size: 28),
+                    ),
+                    const SizedBox(width: AppTheme.space16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.circle, size: 12, color: s.dotColor),
-                        const SizedBox(width: 8),
-                        Text(s.label),
+                        Row(
+                          children: [
+                            Text(
+                              v.vehicleNumber,
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.textDark),
+                            ),
+                            const SizedBox(width: AppTheme.space12),
+                            StatusBadge(status: v.status),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${v.brandModel} • ${v.type} • ${v.company}',
+                          style: const TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                        ),
                       ],
                     ),
-                  );
-                }).toList(),
-                child: OutlinedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.swap_horiz, size: 16),
-                  label: Text('Status: ${v.status.label}'),
-                  style: OutlinedButton.styleFrom(foregroundColor: AppTheme.textDark),
+                  ],
                 ),
-              ),
-              // Driver Assignment Button
-              OutlinedButton.icon(
-                onPressed: _showAssignDriverDialog,
-                icon: const Icon(Icons.person, size: 16),
-                label: Text(
-                  v.assignedDriver != null ? 'Driver: ${v.assignedDriver!.name}' : 'Assign Driver',
+                Wrap(
+                  spacing: AppTheme.space12,
+                  runSpacing: AppTheme.space8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    // Operational Status Quick Action
+                    PopupMenuButton<VehicleStatus>(
+                      tooltip: 'Change Status',
+                      onSelected: _handleStatusChange,
+                      itemBuilder: (context) => VehicleStatus.values.map((s) {
+                        return PopupMenuItem(
+                          value: s,
+                          child: Row(
+                            children: [
+                              Icon(Icons.circle, size: 12, color: s.dotColor),
+                              const SizedBox(width: 8),
+                              Text(s.label),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      child: OutlinedButton.icon(
+                        onPressed: null,
+                        icon: const Icon(Icons.swap_horiz, size: 16),
+                        label: Text('Status: ${v.status.label}'),
+                        style: OutlinedButton.styleFrom(foregroundColor: AppTheme.textDark),
+                      ),
+                    ),
+                    // Driver Assignment Button
+                    OutlinedButton.icon(
+                      onPressed: _showAssignDriverDialog,
+                      icon: const Icon(Icons.person, size: 16),
+                      label: Text(
+                        v.assignedDriver != null ? 'Driver: ${v.assignedDriver!.name}' : 'Assign Driver',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: v.assignedDriver != null ? const Color(0xFF1D4ED8) : AppTheme.textDark,
+                      ),
+                    ),
+                  ],
                 ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: v.assignedDriver != null ? const Color(0xFF1D4ED8) : AppTheme.textDark,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -801,13 +824,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                 separatorBuilder: (_, _) => const SizedBox(height: AppTheme.space12),
                 itemBuilder: (context, i) {
                   final doc = _documents[i];
-                  return Container(
+                  return SpotlightHoverCard(
                     padding: const EdgeInsets.all(AppTheme.space16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                      border: Border.all(color: AppTheme.borderLight),
-                    ),
+                    borderRadius: AppTheme.radiusMd,
                     child: Row(
                       children: [
                         Container(
@@ -959,13 +978,9 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                 separatorBuilder: (_, _) => const SizedBox(height: AppTheme.space12),
                 itemBuilder: (context, i) {
                   final m = _maintenance[i];
-                  return Container(
+                  return SpotlightHoverCard(
                     padding: const EdgeInsets.all(AppTheme.space16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                      border: Border.all(color: AppTheme.borderLight),
-                    ),
+                    borderRadius: AppTheme.radiusMd,
                     child: Row(
                       children: [
                         Container(
