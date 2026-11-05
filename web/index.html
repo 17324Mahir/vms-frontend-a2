@@ -27,6 +27,24 @@
 
   <title>Stark Group - Vehicle Management System</title>
   <link rel="manifest" href="manifest.json">
+
+  <script>
+    // Unregister legacy Service Workers and clear obsolete cache storage
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var i = 0; i < registrations.length; i++) {
+          registrations[i].unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(keys) {
+        for (var i = 0; i < keys.length; i++) {
+          caches.delete(keys[i]);
+        }
+      });
+    }
+  </script>
 </head>
 <body>
   <!--
@@ -37,6 +55,6 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
-  <script src="flutter_bootstrap.js" async></script>
+  <script src="flutter_bootstrap.js?v=2026110502" async></script>
 </body>
 </html>
