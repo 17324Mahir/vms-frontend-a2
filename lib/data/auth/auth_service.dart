@@ -350,6 +350,130 @@ class AuthService {
     );
   }
 
+  /// Checks whether an account exists based strictly on email address.
+  Future<bool> checkEmailExists(String email, {http.Client? client}) async {
+    final httpClient = client ?? http.Client();
+    final isCustomClient = client != null;
+
+    try {
+      final response = await httpClient
+          .get(
+            ApiConfig.authCheckEmailUri(email),
+            headers: const {'Accept': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return decoded['exists'] as bool? ?? false;
+        }
+      }
+      return false;
+    } catch (_) {
+      return false;
+    } finally {
+      if (!isCustomClient) httpClient.close();
+    }
+  }
+
+  /// Initiates password reset by dispatching a 6-digit OTP code to the email address.
+  Future<ForgotPasswordResult> sendPasswordResetCode(
+    String email, {
+    http.Client? client,
+    Duration timeout = const Duration(seconds: 45),
+  }) async {
+    final httpClient = client ?? http.Client();
+    final isCustomClient = client != null;
+
+    try {
+      final response = await httpClient
+          .post(
+            ApiConfig.authForgotPasswordUri,
+            headers: const {
+              'Content-Type': 'application/json; charset=UTF-8',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({'email': email.trim()}),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return ForgotPasswordResult(
+            message: decoded['message'] as String? ?? 'Verification code sent.',
+            email: decoded['email'] as String? ?? email,
+            emailSent: decoded['emailSent'] as bool? ?? false,
+            demoOtp: decoded['demoOtp'] as String?,
+          );
+        }
+        return ForgotPasswordResult(
+          message: 'Verification code sent.',
+          email: email,
+          emailSent: false,
+        );
+      }
+
+      throw _parseResetPasswordError(response);
+    } on TimeoutException catch (e) {
+      throw NetworkException('The server is taking longer than usual to respond. Please try again.', e);
+    } on SocketException catch (e) {
+      throw NetworkException('Unable to connect to the password reset service. Please check your network connection.', e);
+    } on http.ClientException catch (e) {
+      throw NetworkException('Network error during password reset request: ${e.message}', e);
+    } finally {
+      if (!isCustomClient) httpClient.close();
+    }
+  }
+
+  /// Verifies the 6-digit email OTP code and updates the password.
+  Future<String> verifyResetCode(
+    String email,
+    String code,
+    String newPassword, {
+    http.Client? client,
+    Duration timeout = const Duration(seconds: 45),
+  }) async {
+    final httpClient = client ?? http.Client();
+    final isCustomClient = client != null;
+
+    try {
+      final response = await httpClient
+          .post(
+            ApiConfig.authVerifyResetCodeUri,
+            headers: const {
+              'Content-Type': 'application/json; charset=UTF-8',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({
+              'email': email.trim(),
+              'code': code.trim(),
+              'newPassword': newPassword.trim(),
+            }),
+          )
+          .timeout(timeout);
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic>) {
+          return decoded['message'] as String? ?? 'Password has been successfully updated.';
+        }
+        return 'Password has been successfully updated.';
+      }
+
+      throw _parseResetPasswordError(response);
+    } on TimeoutException catch (e) {
+      throw NetworkException('The server is taking longer than usual to respond. Please try again.', e);
+    } on SocketException catch (e) {
+      throw NetworkException('Unable to connect to the verification service. Please check your network connection.', e);
+    } on http.ClientException catch (e) {
+      throw NetworkException('Network error during code verification: ${e.message}', e);
+    } finally {
+      if (!isCustomClient) httpClient.close();
+    }
+  }
+
   /// Centrally handles 401 Unauthorized responses emitted by protected API endpoints.
   /// Prevents race conditions from older expired requests clearing a newer active session.
   void handleUnauthorized({int? forSessionId, String? reason}) {
@@ -405,3 +529,19 @@ class AuthService {
     );
   }
 }
+
+/// Result returned by [AuthService.sendPasswordResetCode].
+class ForgotPasswordResult {
+  final String message;
+  final String email;
+  final bool emailSent;
+  final String? demoOtp;
+
+  const ForgotPasswordResult({
+    required this.message,
+    required this.email,
+    required this.emailSent,
+    this.demoOtp,
+  });
+}
+

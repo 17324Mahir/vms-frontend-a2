@@ -81,4 +81,14 @@ class ApiConfig {
 
   /// Authentication reset password endpoint URI: `${baseUri}/api/auth/reset-password`
   static Uri get authResetPasswordUri => baseUri.replace(path: '/api/auth/reset-password');
+
+  /// Authentication forgot password (request OTP) endpoint URI: `${baseUri}/api/auth/forgot-password`
+  static Uri get authForgotPasswordUri => baseUri.replace(path: '/api/auth/forgot-password');
+
+  /// Authentication verify reset code endpoint URI: `${baseUri}/api/auth/verify-reset-code`
+  static Uri get authVerifyResetCodeUri => baseUri.replace(path: '/api/auth/verify-reset-code');
+
+  /// Authentication email availability check endpoint URI: `${baseUri}/api/auth/check-email?email={email}`
+  static Uri authCheckEmailUri(String email) =>
+      baseUri.replace(path: '/api/auth/check-email', queryParameters: {'email': email.trim().toLowerCase()});
 }
