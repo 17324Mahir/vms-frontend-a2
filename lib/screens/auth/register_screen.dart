@@ -58,8 +58,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (mounted) {
         TextInput.finishAutofillContext();
-        // Successfully registered and authenticated; navigate directly to Fleet Registry
-        Navigator.of(context).pushReplacementNamed(AppRouter.vehiclesRoute);
+        // Successfully registered and authenticated; navigate directly to Fleet Dashboard
+        Navigator.of(context).pushReplacementNamed(AppRouter.dashboardRoute);
       }
     } on ApiException catch (e) {
       if (mounted) {

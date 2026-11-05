@@ -106,8 +106,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(fakeAuth.loginCalls, equals(1));
-    // Navigated to Vehicles page shell
-    expect(find.text('Vehicles'), findsAtLeastNWidgets(1));
+    // Navigated to Fleet Dashboard page shell
+    expect(find.text('Fleet Dashboard'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('Invalid credentials displays inline error alert', (tester) async {

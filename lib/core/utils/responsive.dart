@@ -17,14 +17,14 @@ class Responsive extends StatelessWidget {
   static bool isMobile(BuildContext context) =>
       MediaQuery.sizeOf(context).width < 768;
 
-  /// Tablet breakpoint (>= 768px and < 1100px)
+  /// Tablet breakpoint (>= 768px and < 1000px)
   static bool isTablet(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= 768 &&
-      MediaQuery.sizeOf(context).width < 1100;
+      MediaQuery.sizeOf(context).width < 1000;
 
-  /// Desktop breakpoint (>= 1100px)
+  /// Desktop breakpoint (>= 1000px)
   static bool isDesktop(BuildContext context) =>
-      MediaQuery.sizeOf(context).width >= 1100;
+      MediaQuery.sizeOf(context).width >= 1000;
 
   /// Returns responsive value based on current screen size.
   static T value<T>(
@@ -34,7 +34,7 @@ class Responsive extends StatelessWidget {
     required T desktop,
   }) {
     final width = MediaQuery.sizeOf(context).width;
-    if (width >= 1100) return desktop;
+    if (width >= 1000) return desktop;
     if (width >= 768 && tablet != null) return tablet;
     return mobile;
   }
@@ -42,7 +42,7 @@ class Responsive extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    if (width >= 1100) {
+    if (width >= 1000) {
       return desktop;
     } else if (width >= 768 && tablet != null) {
       return tablet!;

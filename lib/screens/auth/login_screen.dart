@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.clear();
       setState(() => _isSubmitting = false);
 
-      Navigator.of(context).pushReplacementNamed(AppRouter.vehiclesRoute);
+      Navigator.of(context).pushReplacementNamed(AppRouter.dashboardRoute);
     } on ApiException catch (e) {
       if (!mounted) return;
       _passwordController.clear();
@@ -141,6 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         _buildPasswordField(),
                         const SizedBox(height: AppTheme.space24),
                         _buildSubmitButton(),
+                        const SizedBox(height: AppTheme.space16),
+                        _buildDemoCredentialsBox(),
                         const SizedBox(height: AppTheme.space16),
                         _buildRegisterLink(),
                       ],
@@ -379,6 +381,59 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             )
           : const Text('Sign in'),
+    );
+  }
+
+  Widget _buildDemoCredentialsBox() {
+    return Container(
+      padding: const EdgeInsets.all(AppTheme.space12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF6FF), // Blue 50
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        border: Border.all(color: const Color(0xFFBFDBFE)), // Blue 200
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.vpn_key_outlined, size: 16, color: AppTheme.primaryBlue),
+              SizedBox(width: 6),
+              Text(
+                'Demo Credentials',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryBlue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Email: test@starkgroup.test\nPassword: Password123!',
+            style: TextStyle(
+              fontSize: 11,
+              color: AppTheme.textDark,
+              fontFamily: 'monospace',
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: () {
+              _emailController.text = 'test@starkgroup.test';
+              _passwordController.text = 'Password123!';
+            },
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              minimumSize: const Size(0, 32),
+              side: const BorderSide(color: AppTheme.primaryBlue),
+            ),
+            child: const Text('Auto-fill Demo Credentials', style: TextStyle(fontSize: 12)),
+          ),
+        ],
+      ),
     );
   }
 

@@ -425,10 +425,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             if (isAuthenticated)
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.of(context).pushNamed(AppRouter.vehiclesRoute);
+                  Navigator.of(context).pushNamed(AppRouter.dashboardRoute);
                 },
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: const Text('Open Fleet Registry', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                icon: const Icon(Icons.dashboard_rounded, size: 18),
+                label: const Text('Open Fleet Dashboard', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryBlue,
                   foregroundColor: Colors.white,
