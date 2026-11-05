@@ -431,7 +431,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             InkWell(
                               onTap: () {
-                                Navigator.of(context).pushReplacementNamed(AppRouter.loginRoute);
+                                final email = _emailController.text.trim();
+                                Navigator.of(context).pushReplacementNamed(
+                                  AppRouter.loginRoute,
+                                  arguments: email.isNotEmpty ? email : null,
+                                );
                               },
                               child: const Text(
                                 'Sign In',
@@ -443,6 +447,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Return to Home Link
+                        TextButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pushReplacementNamed(AppRouter.homeRoute);
+                          },
+                          icon: const Icon(Icons.arrow_back, size: 14, color: AppTheme.textMuted),
+                          label: const Text('Return to Home', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
                         ),
                       ],
                     ),

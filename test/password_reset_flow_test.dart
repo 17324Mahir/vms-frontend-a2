@@ -57,6 +57,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Password123!'), findsNWidgets(2));
+
+      // Verify Sign In and Return to Home buttons are present
+      expect(find.text('Sign In'), findsOneWidget);
+      expect(find.text('Return to Home'), findsOneWidget);
     });
   });
 }
