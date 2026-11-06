@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/file_download_helper.dart';
 import '../../data/api/document_api_client.dart';
 import '../../data/api/maintenance_api_client.dart';
 import '../../data/driver_repository.dart';
@@ -22,6 +23,7 @@ class VehicleDetailsScreen extends StatefulWidget {
   final Vehicle? initialVehicle;
   final List<VehicleDocument>? initialDocuments;
   final List<MaintenanceRecord>? initialMaintenance;
+  final int initialTab;
 
   const VehicleDetailsScreen({
     super.key,
@@ -29,6 +31,7 @@ class VehicleDetailsScreen extends StatefulWidget {
     this.initialVehicle,
     this.initialDocuments,
     this.initialMaintenance,
+    this.initialTab = 0,
   });
 
   @override
@@ -54,7 +57,11 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTab.clamp(0, 1),
+    );
     if (widget.initialVehicle != null) {
       _vehicle = widget.initialVehicle;
       _documents = widget.initialDocuments ?? [];
@@ -392,16 +399,168 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
     );
   }
 
-  Future<void> _showRecordMaintenanceDialog() async {
+  Future<void> _showDocumentFilePreview(VehicleDocument doc) async {
+    VehicleDocument fullDoc = doc;
+    if (fullDoc.fileData == null && fullDoc.hasFileData && _vehicle != null) {
+      try {
+        fullDoc = await _docClient.getDocument(_vehicle!.id, doc.id);
+      } catch (_) {
+        // Fallback to existing doc
+      }
+    }
+
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: fullDoc.statusBadgeBgColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.description, color: fullDoc.statusBadgeTextColor, size: 20),
+            ),
+            const SizedBox(width: AppTheme.space12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(fullDoc.fileName ?? '${fullDoc.documentType.label} Attachment', style: const TextStyle(fontSize: 16)),
+                  Text(
+                    '${fullDoc.documentType.label} • Expiry: ${fullDoc.expiryDate.toIso8601String().substring(0, 10)}',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 500,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (fullDoc.fileData != null &&
+                    (fullDoc.fileType == 'png' || fullDoc.fileType == 'jpg' || fullDoc.fileType == 'jpeg'))
+                  Container(
+                    margin: const EdgeInsets.only(bottom: AppTheme.space16),
+                    constraints: const BoxConstraints(maxHeight: 300),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.borderNeutral),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.memory(
+                      base64Decode(fullDoc.fileData!),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text('Unable to render image preview'),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(AppTheme.space20),
+                    margin: const EdgeInsets.only(bottom: AppTheme.space16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                      border: Border.all(color: AppTheme.borderNeutral),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          fullDoc.fileType == 'pdf' ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                          size: 48,
+                          color: fullDoc.fileType == 'pdf' ? const Color(0xFFDC2626) : AppTheme.primaryBlue,
+                        ),
+                        const SizedBox(height: AppTheme.space8),
+                        Text(
+                          fullDoc.fileName ?? 'Official Document Attachment',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Format: ${(fullDoc.fileType ?? 'document').toUpperCase()} • Status: ${fullDoc.expiryStatusLabel}',
+                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                Container(
+                  padding: const EdgeInsets.all(AppTheme.space12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (fullDoc.documentNumber != null && fullDoc.documentNumber!.isNotEmpty)
+                        Text('Document Number: ${fullDoc.documentNumber}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      if (fullDoc.issueDate != null)
+                        Text('Issued: ${fullDoc.issueDate!.toIso8601String().substring(0, 10)}', style: const TextStyle(fontSize: 12)),
+                      Text('Expiry: ${fullDoc.expiryDate.toIso8601String().substring(0, 10)} (${fullDoc.expiryStatusLabel})', style: const TextStyle(fontSize: 12)),
+                      if (fullDoc.notes != null && fullDoc.notes!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text('Notes: ${fullDoc.notes}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Close'),
+          ),
+          if (fullDoc.fileData != null)
+            FilledButton.icon(
+              onPressed: () {
+                triggerBrowserDownload(
+                  fullDoc.fileData!,
+                  fullDoc.fileName ?? '${fullDoc.documentType.label}.${fullDoc.fileType ?? "pdf"}',
+                  fullDoc.fileType,
+                );
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Downloading ${fullDoc.fileName ?? "document"}...'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.download, size: 16),
+              label: const Text('Download File'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showRecordMaintenanceDialog({MaintenanceRecord? recordToEdit}) async {
     if (_vehicle == null) return;
     final messenger = ScaffoldMessenger.of(context);
+    final isEditing = recordToEdit != null;
 
-    DateTime maintDate = DateTime.now();
-    MaintenanceType maintType = MaintenanceType.routineService;
-    final costCtrl = TextEditingController(text: '0.00');
-    final vendorCtrl = TextEditingController();
-    final odoCtrl = TextEditingController();
-    final notesCtrl = TextEditingController();
+    DateTime maintDate = recordToEdit?.maintenanceDate ?? DateTime.now();
+    MaintenanceType maintType = recordToEdit?.maintenanceType ?? MaintenanceType.routineService;
+    final costCtrl = TextEditingController(text: isEditing ? recordToEdit.cost.toStringAsFixed(2) : '0.00');
+    final vendorCtrl = TextEditingController(text: recordToEdit?.workshopVendor ?? '');
+    final odoCtrl = TextEditingController(text: recordToEdit?.odometerReading?.toString() ?? '');
+    final notesCtrl = TextEditingController(text: recordToEdit?.notes ?? '');
     VehicleStatus? statusTransition;
 
     await showDialog(
@@ -409,7 +568,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text('Record Vehicle Maintenance'),
+            title: Text(isEditing ? 'Edit Maintenance Record' : 'Record Vehicle Maintenance'),
             content: SizedBox(
               width: 500,
               child: SingleChildScrollView(
@@ -535,22 +694,29 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                       'notes': notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
                       if (statusTransition != null) 'updateVehicleStatus': statusTransition!.toBackendString(),
                     };
-                    await _maintClient.recordMaintenance(_vehicle!.id, payload);
+                    if (isEditing) {
+                      await _maintClient.updateMaintenance(_vehicle!.id, recordToEdit.id, payload);
+                    } else {
+                      await _maintClient.recordMaintenance(_vehicle!.id, payload);
+                    }
                     await _loadAllData();
                     if (mounted) {
                       messenger.showSnackBar(
-                        const SnackBar(content: Text('Maintenance record saved successfully'), backgroundColor: Color(0xFF15803D)),
+                        SnackBar(
+                          content: Text(isEditing ? 'Maintenance record updated successfully' : 'Maintenance record saved successfully'),
+                          backgroundColor: const Color(0xFF15803D),
+                        ),
                       );
                     }
                   } catch (e) {
                     if (mounted) {
                       messenger.showSnackBar(
-                        SnackBar(content: Text('Failed to record maintenance: $e'), backgroundColor: const Color(0xFFDC2626)),
+                        SnackBar(content: Text('Failed to save maintenance: $e'), backgroundColor: const Color(0xFFDC2626)),
                       );
                     }
                   }
                 },
-                child: const Text('Save Record'),
+                child: Text(isEditing ? 'Update Record' : 'Save Record'),
               ),
             ],
           );
@@ -885,6 +1051,12 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                             ],
                           ),
                         ),
+                        if (doc.hasFileData || doc.fileName != null)
+                          IconButton(
+                            tooltip: 'Preview & Download File',
+                            icon: const Icon(Icons.visibility_outlined, color: Color(0xFF0D9488), size: 20),
+                            onPressed: () => _showDocumentFilePreview(doc),
+                          ),
                         IconButton(
                           tooltip: 'Edit Document',
                           icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 20),
@@ -1038,6 +1210,11 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                           ),
                         ),
                         const SizedBox(width: AppTheme.space12),
+                        IconButton(
+                          tooltip: 'Edit Record',
+                          icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 20),
+                          onPressed: () => _showRecordMaintenanceDialog(recordToEdit: m),
+                        ),
                         IconButton(
                           tooltip: 'Delete Record',
                           icon: const Icon(Icons.delete_outline, color: Color(0xFFDC2626), size: 20),

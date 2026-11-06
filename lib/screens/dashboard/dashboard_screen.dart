@@ -280,6 +280,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       backgroundColor: const Color(0xFFF5F3FF),
                       side: const BorderSide(color: Color(0xFFDDD6FE)),
                     ),
+                    ActionChip(
+                      avatar: const Icon(Icons.folder_shared_rounded, size: 16, color: Color(0xFF0D9488)),
+                      label: const Text('Documents Vault'),
+                      onPressed: () => Navigator.of(context).pushNamed(AppRouter.documentsRoute),
+                      backgroundColor: const Color(0xFFF0FDFA),
+                      side: const BorderSide(color: Color(0xFF99F6E4)),
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.build_circle_rounded, size: 16, color: Color(0xFFD97706)),
+                      label: const Text('Maintenance Hub'),
+                      onPressed: () => Navigator.of(context).pushNamed(AppRouter.maintenanceRoute),
+                      backgroundColor: const Color(0xFFFFFBEB),
+                      side: const BorderSide(color: Color(0xFFFDE68A)),
+                    ),
                   ],
                 ),
               ],
@@ -341,6 +355,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon: Icons.warning_rounded,
         iconColor: stats.expiredDocuments > 0 ? const Color(0xFFDC2626) : const Color(0xFFD97706),
         bgColor: stats.expiredDocuments > 0 ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB),
+        route: AppRouter.documentsRoute,
       ),
       _KpiData(
         title: 'Maintenance Cost',
@@ -351,6 +366,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon: Icons.attach_money_rounded,
         iconColor: const Color(0xFF0D9488),
         bgColor: const Color(0xFFF0FDFA),
+        route: AppRouter.maintenanceRoute,
       ),
     ];
 
@@ -466,6 +482,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                 ),
                 const Spacer(),
+                InkWell(
+                  onTap: () => Navigator.of(context).pushNamed(AppRouter.documentsRoute),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Explore All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primaryBlue)),
+                        SizedBox(width: 2),
+                        Icon(Icons.chevron_right, size: 16, color: AppTheme.primaryBlue),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.space8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -547,7 +578,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onTap: () {
                     Navigator.of(context).pushNamed(
                       AppRouter.vehicleDetailsRoute,
-                      arguments: doc.vehicleId,
+                      arguments: {'id': doc.vehicleId, 'initialTab': 0},
                     );
                   },
                 );
@@ -583,6 +614,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textDark),
                 ),
                 const Spacer(),
+                InkWell(
+                  onTap: () => Navigator.of(context).pushNamed(AppRouter.maintenanceRoute),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Explore All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
+                        SizedBox(width: 2),
+                        Icon(Icons.chevron_right, size: 16, color: Color(0xFF16A34A)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppTheme.space8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
@@ -659,7 +705,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onTap: () {
                     Navigator.of(context).pushNamed(
                       AppRouter.vehicleDetailsRoute,
-                      arguments: m.vehicleId,
+                      arguments: {'id': m.vehicleId, 'initialTab': 1},
                     );
                   },
                 );

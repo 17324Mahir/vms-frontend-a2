@@ -53,6 +53,13 @@ class ApiConfig {
   static Uri vehicleDocumentUri(int vehicleId, int docId) =>
       baseUri.replace(path: '/api/vehicles/$vehicleId/documents/$docId');
 
+  /// Document download URI: `${baseUri}/api/vehicles/{vehicleId}/documents/{docId}/download`
+  static Uri vehicleDocumentDownloadUri(int vehicleId, int docId) =>
+      baseUri.replace(path: '/api/vehicles/$vehicleId/documents/$docId/download');
+
+  /// Global documents collection URI: `${baseUri}/api/documents`
+  static Uri get documentsUri => baseUri.replace(path: '/api/documents');
+
   /// Vehicle maintenance collection URI: `${baseUri}/api/vehicles/{id}/maintenance`
   static Uri vehicleMaintenanceUri(int vehicleId) =>
       baseUri.replace(path: '/api/vehicles/$vehicleId/maintenance');
@@ -60,6 +67,9 @@ class ApiConfig {
   /// Single maintenance record URI: `${baseUri}/api/vehicles/{id}/maintenance/{mId}`
   static Uri vehicleMaintenanceItemUri(int vehicleId, int mId) =>
       baseUri.replace(path: '/api/vehicles/$vehicleId/maintenance/$mId');
+
+  /// Global maintenance collection URI: `${baseUri}/api/maintenance`
+  static Uri get maintenanceUri => baseUri.replace(path: '/api/maintenance');
 
   /// Drivers collection URI: `${baseUri}/api/drivers`
   static Uri get driversUri => baseUri.replace(path: '/api/drivers');

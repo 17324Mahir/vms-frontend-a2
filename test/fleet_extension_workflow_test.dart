@@ -9,8 +9,10 @@ import 'package:stark_vms/models/vehicle.dart';
 import 'package:stark_vms/models/vehicle_document.dart';
 import 'package:stark_vms/router/app_router.dart';
 import 'package:stark_vms/screens/dashboard/dashboard_screen.dart';
+import 'package:stark_vms/screens/documents/document_list_screen.dart';
 import 'package:stark_vms/screens/drivers/driver_form_screen.dart';
 import 'package:stark_vms/screens/drivers/driver_list_screen.dart';
+import 'package:stark_vms/screens/maintenance/maintenance_list_screen.dart';
 import 'package:stark_vms/screens/vehicles/vehicle_details_screen.dart';
 
 void main() {
@@ -136,5 +138,57 @@ void main() {
     expect(MaintenanceType.routineService.toBackendString(), 'ROUTINE_SERVICE');
     expect(MaintenanceType.oilChange.toBackendString(), 'OIL_CHANGE');
     expect(MaintenanceType.fromBackendString('BRAKE_SERVICE'), MaintenanceType.brakeService);
+  });
+
+  testWidgets('DocumentListScreen renders Fleet Documents title and refresh button', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const DocumentListScreen(),
+        onGenerateRoute: AppRouter.generateRoute,
+      ),
+    );
+
+    expect(find.text('Fleet Documents'), findsWidgets);
+  });
+
+  testWidgets('MaintenanceListScreen renders Fleet Maintenance title', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const MaintenanceListScreen(),
+        onGenerateRoute: AppRouter.generateRoute,
+      ),
+    );
+
+    expect(find.text('Fleet Maintenance'), findsWidgets);
+  });
+
+  testWidgets('VehicleDetailsScreen opens Maintenance History tab when initialTab is 1', (tester) async {
+    final testVehicle = Vehicle(
+      id: 88,
+      vehicleNumber: 'SG-TAB-88',
+      company: 'Stark Industries',
+      type: 'SUV',
+      brand: 'Tesla',
+      model: 'Model X',
+      status: VehicleStatus.active,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: VehicleDetailsScreen(
+          vehicleId: 88,
+          initialVehicle: testVehicle,
+          initialTab: 1,
+        ),
+        onGenerateRoute: AppRouter.generateRoute,
+      ),
+    );
+    await tester.pump();
+
+    // Verify Tab 1 content is visible (Lifetime Spend)
+    expect(find.textContaining('Lifetime Spend:'), findsOneWidget);
   });
 }

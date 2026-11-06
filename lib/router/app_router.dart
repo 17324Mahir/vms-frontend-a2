@@ -7,9 +7,11 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/reset_password_screen.dart';
 import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/documents/document_list_screen.dart';
 import '../screens/drivers/driver_form_screen.dart';
 import '../screens/drivers/driver_list_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/maintenance/maintenance_list_screen.dart';
 import '../screens/vehicles/vehicle_details_screen.dart';
 import '../screens/vehicles/vehicle_form_screen.dart';
 import '../screens/vehicles/vehicle_list_screen.dart';
@@ -27,6 +29,8 @@ class AppRouter {
   static const String vehicleNewRoute = '/vehicles/new';
   static const String vehicleEditRoute = '/vehicles/edit';
   static const String vehicleDetailsRoute = '/vehicles/details';
+  static const String documentsRoute = '/documents';
+  static const String maintenanceRoute = '/maintenance';
   static const String driversRoute = '/drivers';
   static const String driverNewRoute = '/drivers/new';
   static const String driverEditRoute = '/drivers/edit';
@@ -95,20 +99,36 @@ class AppRouter {
       case vehicleDetailsRoute:
         final args = settings.arguments;
         final int id;
+        int initialTab = 0;
         if (args is int) {
           id = args;
         } else if (args is Vehicle) {
           id = args.id;
         } else if (args is String) {
           id = int.tryParse(args) ?? 1;
-        } else if (args is Map && args['id'] != null) {
-          id = int.tryParse(args['id'].toString()) ?? 1;
+        } else if (args is Map) {
+          id = int.tryParse(args['id']?.toString() ?? '1') ?? 1;
+          if (args['initialTab'] != null) {
+            initialTab = int.tryParse(args['initialTab'].toString()) ?? 0;
+          }
         } else {
           id = 1;
         }
         return MaterialPageRoute(
           settings: settings,
-          builder: (_) => VehicleDetailsScreen(vehicleId: id),
+          builder: (_) => VehicleDetailsScreen(vehicleId: id, initialTab: initialTab),
+        );
+
+      case documentsRoute:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const DocumentListScreen(),
+        );
+
+      case maintenanceRoute:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const MaintenanceListScreen(),
         );
 
       case vehicleEditRoute:

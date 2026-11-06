@@ -32,6 +32,19 @@ class DocumentApiClient {
     'Accept': 'application/json',
   };
 
+  Future<List<VehicleDocument>> getAllDocuments() async {
+    return _send('GET', ApiConfig.documentsUri, (response) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) {
+        throw const FormatException('Expected JSON array of documents');
+      }
+      return decoded
+          .cast<Map<String, dynamic>>()
+          .map<VehicleDocument>(VehicleDocument.fromJson)
+          .toList();
+    });
+  }
+
   Future<List<VehicleDocument>> getDocumentsForVehicle(int vehicleId) async {
     return _send('GET', ApiConfig.vehicleDocumentsUri(vehicleId), (response) {
       final decoded = jsonDecode(response.body);
@@ -42,6 +55,13 @@ class DocumentApiClient {
           .cast<Map<String, dynamic>>()
           .map<VehicleDocument>(VehicleDocument.fromJson)
           .toList();
+    });
+  }
+
+  Future<VehicleDocument> getDocument(int vehicleId, int docId) async {
+    return _send('GET', ApiConfig.vehicleDocumentUri(vehicleId, docId), (response) {
+      final decoded = jsonDecode(response.body);
+      return VehicleDocument.fromJson(decoded as Map<String, dynamic>);
     });
   }
 

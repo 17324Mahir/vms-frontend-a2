@@ -160,11 +160,39 @@ class AppShell extends StatelessWidget {
           _buildSidebarItem(
             icon: Icons.directions_car_filled_rounded,
             label: 'Vehicles',
-            isActive: title == 'Vehicles' || title.contains('Vehicle'),
+            isActive: title == 'Vehicles' || (title.contains('Vehicle') && !title.contains('Document') && !title.contains('Maintenance')),
             onTap: () {
               if (title != 'Vehicles') {
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   AppRouter.vehiclesRoute,
+                  (route) => false,
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 6),
+          _buildSidebarItem(
+            icon: Icons.folder_shared_rounded,
+            label: 'Documents',
+            isActive: title == 'Fleet Documents' || title.contains('Document'),
+            onTap: () {
+              if (title != 'Fleet Documents') {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRouter.documentsRoute,
+                  (route) => false,
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 6),
+          _buildSidebarItem(
+            icon: Icons.build_circle_rounded,
+            label: 'Maintenance',
+            isActive: title == 'Fleet Maintenance' || title.contains('Maintenance'),
+            onTap: () {
+              if (title != 'Fleet Maintenance') {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRouter.maintenanceRoute,
                   (route) => false,
                 );
               }
@@ -376,12 +404,42 @@ class AppShell extends StatelessWidget {
             _buildSidebarItem(
               icon: Icons.directions_car_filled_rounded,
               label: 'Vehicles',
-              isActive: title == 'Vehicles' || title.contains('Vehicle'),
+              isActive: title == 'Vehicles' || (title.contains('Vehicle') && !title.contains('Document') && !title.contains('Maintenance')),
               onTap: () {
                 Navigator.of(context).pop();
                 if (title != 'Vehicles') {
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     AppRouter.vehiclesRoute,
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 4),
+            _buildSidebarItem(
+              icon: Icons.folder_shared_rounded,
+              label: 'Documents',
+              isActive: title == 'Fleet Documents' || title.contains('Document'),
+              onTap: () {
+                Navigator.of(context).pop();
+                if (title != 'Fleet Documents') {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    AppRouter.documentsRoute,
+                    (route) => false,
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 4),
+            _buildSidebarItem(
+              icon: Icons.build_circle_rounded,
+              label: 'Maintenance',
+              isActive: title == 'Fleet Maintenance' || title.contains('Maintenance'),
+              onTap: () {
+                Navigator.of(context).pop();
+                if (title != 'Fleet Maintenance') {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    AppRouter.maintenanceRoute,
                     (route) => false,
                   );
                 }

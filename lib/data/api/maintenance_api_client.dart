@@ -32,6 +32,19 @@ class MaintenanceApiClient {
     'Accept': 'application/json',
   };
 
+  Future<List<MaintenanceRecord>> getAllMaintenance() async {
+    return _send('GET', ApiConfig.maintenanceUri, (response) {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) {
+        throw const FormatException('Expected JSON array of maintenance records');
+      }
+      return decoded
+          .cast<Map<String, dynamic>>()
+          .map<MaintenanceRecord>(MaintenanceRecord.fromJson)
+          .toList();
+    });
+  }
+
   Future<List<MaintenanceRecord>> getMaintenanceHistory(int vehicleId) async {
     return _send('GET', ApiConfig.vehicleMaintenanceUri(vehicleId), (response) {
       final decoded = jsonDecode(response.body);
