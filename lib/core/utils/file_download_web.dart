@@ -19,3 +19,4 @@ void triggerBrowserDownload(String base64Data, String fileName, String? fileType
   anchor.click();
   anchor.remove();
 }
+

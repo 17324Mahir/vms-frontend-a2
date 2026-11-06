@@ -1,0 +1,60 @@
+name: Frontend Automated Guardrails & CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-and-quality-guardrails:
+    name: Automated Security & Quality Guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Leaked Secret Guardrail
+        run: |
+          echo "Scanning frontend codebase for hardcoded private keys or bearer tokens..."
+          if grep -rnEI '(BEGIN (RSA|EC|DSA|OPENSSH) PRIVATE KEY|eyJhbGciOi)' lib/ 2>/dev/null; then
+            echo "::error::Potential hardcoded secret or JWT detected in lib/!"
+            exit 1
+          fi
+          echo "Guardrail PASSED: Clean source tree."
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Fetch Dependencies
+        run: flutter pub get
+
+      - name: Guardrail - Static Code Analysis
+        run: |
+          echo "Enforcing strict static analysis (zero warnings allowed)..."
+          flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Guardrail - Test-Driven Specification Suite
+        run: |
+          echo "Executing unit, widget, and state management specifications..."
+          flutter test --coverage
+
+      - name: Build Web Application (Release)
+        run: |
+          echo "Compiling optimized Flutter Web distribution..."
+          flutter build web --release --dart-define=API_BASE_URL="https://vms-backend-a2.onrender.com"
+
+      - name: Upload Web Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-web-bundle
+          path: build/web/
+          retention-days: 7
