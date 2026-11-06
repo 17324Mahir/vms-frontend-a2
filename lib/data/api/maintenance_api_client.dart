@@ -33,16 +33,51 @@ class MaintenanceApiClient {
   };
 
   Future<List<MaintenanceRecord>> getAllMaintenance() async {
-    return _send('GET', ApiConfig.maintenanceUri, (response) {
-      final decoded = jsonDecode(response.body);
-      if (decoded is! List) {
-        throw const FormatException('Expected JSON array of maintenance records');
+    try {
+      return await _send('GET', ApiConfig.maintenanceUri, (response) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is! List) {
+          throw const FormatException('Expected JSON array of maintenance records');
+        }
+        return decoded
+            .cast<Map<String, dynamic>>()
+            .map<MaintenanceRecord>(MaintenanceRecord.fromJson)
+            .toList();
+      });
+    } catch (_) {
+      return _aggregateMaintenanceAcrossVehicles();
+    }
+  }
+
+  Future<List<MaintenanceRecord>> _aggregateMaintenanceAcrossVehicles() async {
+    try {
+      final vehicleListUri = ApiConfig.vehiclesUri.replace(
+        queryParameters: {'page': '0', 'size': '100'},
+      );
+      final vehicleIds = await _send('GET', vehicleListUri, (response) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic> && decoded['content'] is List) {
+          return (decoded['content'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map((v) => v['id'])
+              .whereType<int>()
+              .toList();
+        }
+        return <int>[];
+      });
+
+      final allRecords = <MaintenanceRecord>[];
+      for (final vId in vehicleIds) {
+        try {
+          final records = await getMaintenanceHistory(vId);
+          allRecords.addAll(records);
+        } catch (_) {}
       }
-      return decoded
-          .cast<Map<String, dynamic>>()
-          .map<MaintenanceRecord>(MaintenanceRecord.fromJson)
-          .toList();
-    });
+      allRecords.sort((a, b) => b.maintenanceDate.compareTo(a.maintenanceDate));
+      return allRecords;
+    } catch (_) {
+      return <MaintenanceRecord>[];
+    }
   }
 
   Future<List<MaintenanceRecord>> getMaintenanceHistory(int vehicleId) async {

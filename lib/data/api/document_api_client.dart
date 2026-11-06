@@ -33,16 +33,51 @@ class DocumentApiClient {
   };
 
   Future<List<VehicleDocument>> getAllDocuments() async {
-    return _send('GET', ApiConfig.documentsUri, (response) {
-      final decoded = jsonDecode(response.body);
-      if (decoded is! List) {
-        throw const FormatException('Expected JSON array of documents');
+    try {
+      return await _send('GET', ApiConfig.documentsUri, (response) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is! List) {
+          throw const FormatException('Expected JSON array of documents');
+        }
+        return decoded
+            .cast<Map<String, dynamic>>()
+            .map<VehicleDocument>(VehicleDocument.fromJson)
+            .toList();
+      });
+    } catch (_) {
+      return _aggregateDocumentsAcrossVehicles();
+    }
+  }
+
+  Future<List<VehicleDocument>> _aggregateDocumentsAcrossVehicles() async {
+    try {
+      final vehicleListUri = ApiConfig.vehiclesUri.replace(
+        queryParameters: {'page': '0', 'size': '100'},
+      );
+      final vehicleIds = await _send('GET', vehicleListUri, (response) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map<String, dynamic> && decoded['content'] is List) {
+          return (decoded['content'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map((v) => v['id'])
+              .whereType<int>()
+              .toList();
+        }
+        return <int>[];
+      });
+
+      final allDocs = <VehicleDocument>[];
+      for (final vId in vehicleIds) {
+        try {
+          final docs = await getDocumentsForVehicle(vId);
+          allDocs.addAll(docs);
+        } catch (_) {}
       }
-      return decoded
-          .cast<Map<String, dynamic>>()
-          .map<VehicleDocument>(VehicleDocument.fromJson)
-          .toList();
-    });
+      allDocs.sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
+      return allDocs;
+    } catch (_) {
+      return <VehicleDocument>[];
+    }
   }
 
   Future<List<VehicleDocument>> getDocumentsForVehicle(int vehicleId) async {
