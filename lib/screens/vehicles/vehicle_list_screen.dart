@@ -12,6 +12,7 @@ import '../../models/page_response.dart';
 import '../../models/vehicle.dart';
 import '../../router/app_router.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/workspace_section_header.dart';
 import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/status_badge.dart';
 
@@ -141,9 +142,8 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
   }
 
   Future<void> _openDetails(int vehicleId) async {
-    await Navigator.of(context).pushNamed(
-      AppRouter.vehicleDetailsPath(vehicleId),
-    );
+    await Navigator.of(context)
+        .pushNamed(AppRouter.vehicleDetailsPath(vehicleId));
     if (mounted) _loadVehicles(silent: true, refreshCompanies: true);
   }
 
@@ -289,110 +289,107 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         icon: const Icon(Icons.add, size: 18),
         label: Text(isDesktop ? 'Register vehicle' : 'Register'),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppTheme.space24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(totalMatches, _isLoading),
-            if (_errorMessage != null && vehicles.isNotEmpty) ...[
-              const SizedBox(height: AppTheme.space12),
-              _buildRefreshErrorBanner(_errorMessage!),
-            ],
-            const SizedBox(height: AppTheme.space20),
-            _buildToolbar(),
-            const SizedBox(height: AppTheme.space16),
-            if (_isLoading && vehicles.isEmpty)
-              _buildLoadingState()
-            else if (_errorMessage != null && vehicles.isEmpty)
-              _buildErrorState(_errorMessage!)
-            else if (totalMatches == 0)
-              _hasActiveFilters
-                  ? _buildNoMatchingResults()
-                  : _buildNoVehiclesRegistered()
-            else ...[
-              if (MediaQuery.sizeOf(context).width >= 850)
-                _buildDesktopTable(vehicles)
-              else
-                _buildMobileCards(vehicles),
-              const SizedBox(height: AppTheme.space16),
-              _buildPaginationControls(
-                startIndex: startIndex + 1,
-                endIndex: startIndex + vehicles.length,
-                totalMatches: totalMatches,
-                totalPages: totalPages,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final horizontalPadding =
+              isDesktop ? AppTheme.space24 : AppTheme.space16;
+          final contentWidth = constraints.maxWidth - 2 * horizontalPadding;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(horizontalPadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildHeader(totalMatches, _isLoading),
+                      if (_errorMessage != null && vehicles.isNotEmpty) ...[
+                        const SizedBox(height: AppTheme.space12),
+                        _buildRefreshErrorBanner(_errorMessage!),
+                      ],
+                      const SizedBox(height: AppTheme.space20),
+                      _buildToolbar(contentWidth >= 760),
+                      const SizedBox(height: AppTheme.space16),
+                      if (_isLoading && vehicles.isEmpty)
+                        _buildLoadingState()
+                      else if (_errorMessage != null && vehicles.isEmpty)
+                        _buildErrorState(_errorMessage!)
+                      else if (totalMatches == 0)
+                        _hasActiveFilters
+                            ? _buildNoMatchingResults()
+                            : _buildNoVehiclesRegistered()
+                      else if (contentWidth >= 950)
+                        _buildDesktopTable(vehicles)
+                      else ...[
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: _buildMobileSort(),
+                        ),
+                        const SizedBox(height: AppTheme.space8),
+                        _buildMobileCards(vehicles),
+                      ],
+                    ],
+                  ),
+                ),
               ),
+              if (vehicles.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    AppTheme.space8,
+                    horizontalPadding,
+                    AppTheme.space12,
+                  ),
+                  child: _buildPaginationControls(
+                    startIndex: startIndex + 1,
+                    endIndex: startIndex + vehicles.length,
+                    totalMatches: totalMatches,
+                    totalPages: totalPages,
+                  ),
+                ),
             ],
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
   Widget _buildHeader(int totalCount, bool isLoading) {
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.end,
-      spacing: AppTheme.space16,
-      runSpacing: AppTheme.space12,
-      children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Fleet Registry',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textDark,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Manage and monitor registered fleet vehicles.',
-                style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-              ),
-            ],
+    return WorkspaceSectionHeader(
+      label: 'FLEET OPERATIONS',
+      title: 'Fleet Registry',
+      description: 'Search vehicle records, update operational status and manage driver assignments.',
+      actions: Wrap(
+        spacing: AppTheme.space8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Text(
+            'Total: $totalCount vehicles',
+            style: const TextStyle(
+              color: AppTheme.onNavyMuted,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppTheme.borderSubtle,
-                borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                border: Border.all(color: AppTheme.borderNeutral),
-              ),
-              child: Text(
-                'Total: $totalCount vehicles',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textMuted,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppTheme.space8),
-            IconButton(
-              icon: isLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.refresh, size: 18),
-              tooltip: 'Refresh',
-              onPressed: isLoading
-                  ? null
-                  : () => _loadVehicles(silent: true, refreshCompanies: true),
-            ),
-          ],
-        ),
-      ],
+          IconButton(
+            color: Colors.white,
+            icon: isLoading
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.refresh, size: 20),
+            tooltip: 'Refresh',
+            onPressed: isLoading
+                ? null
+                : () => _loadVehicles(silent: true, refreshCompanies: true),
+          ),
+        ],
+      ),
     );
   }
 
@@ -432,13 +429,11 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     );
   }
 
-  Widget _buildToolbar() {
-    final isDesktop = MediaQuery.sizeOf(context).width >= 900;
-
+  Widget _buildToolbar(bool isWide) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppTheme.space16),
-        child: isDesktop
+        child: isWide
             ? Row(
                 children: [
                   Expanded(flex: 3, child: _buildSearchInput()),
@@ -489,7 +484,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     return TextField(
       controller: _searchController,
       decoration: InputDecoration(
-        hintText: 'Search by vehicle number, company, brand, or model...',
+        hintText: 'Search fleet vehicles…',
         prefixIcon: const Icon(
           Icons.search,
           size: 18,
@@ -533,7 +528,11 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
           .map(
             (c) => DropdownMenuItem(
               value: c,
-              child: Text(c, style: const TextStyle(fontSize: 13)),
+              child: Text(
+                c,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13),
+              ),
             ),
           )
           .toList(),
@@ -571,7 +570,13 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(s.label, style: const TextStyle(fontSize: 13)),
+                Flexible(
+                  child: Text(
+                    s.label,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
               ],
             ),
           ),
@@ -652,28 +657,22 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
   Widget _buildDesktopTable(List<Vehicle> vehicles) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 950),
-          child: Table(
-            columnWidths: const {
-              0: FixedColumnWidth(130), // Vehicle Number
-              1: FlexColumnWidth(1.8), // Company
-              2: FixedColumnWidth(85), // Type
-              3: FlexColumnWidth(1.2), // Brand
-              4: FlexColumnWidth(1.4), // Model
-              5: FlexColumnWidth(1.4), // Driver
-              6: FixedColumnWidth(130), // Status
-              7: FixedColumnWidth(140), // Actions
-            },
-            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            children: [
-              _buildTableHeaderRow(),
-              ...vehicles.map((v) => _buildTableRow(v)),
-            ],
-          ),
-        ),
+      child: Table(
+        columnWidths: const {
+          0: FixedColumnWidth(130), // Vehicle Number
+          1: FlexColumnWidth(1.8), // Company
+          2: FixedColumnWidth(85), // Type
+          3: FlexColumnWidth(1.2), // Brand
+          4: FlexColumnWidth(1.4), // Model
+          5: FlexColumnWidth(1.4), // Driver
+          6: FixedColumnWidth(130), // Status
+          7: FixedColumnWidth(140), // Actions
+        },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: [
+          _buildTableHeaderRow(),
+          ...vehicles.map((v) => _buildTableRow(v)),
+        ],
       ),
     );
   }
@@ -949,6 +948,48 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     );
   }
 
+  Widget _buildMobileSort() {
+    final fieldLabel = _sortField == VehicleSortField.vehicleNumber
+        ? 'Vehicle number'
+        : 'Company';
+
+    return PopupMenuButton<VehicleSortField>(
+      tooltip: 'Sort vehicles',
+      onSelected: _toggleSort,
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: VehicleSortField.vehicleNumber,
+          child: Text('Sort by vehicle number'),
+        ),
+        PopupMenuItem(
+          value: VehicleSortField.company,
+          child: Text('Sort by company'),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Sort: $fieldLabel',
+              style: const TextStyle(
+                color: AppTheme.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: AppTheme.space8),
+            Icon(
+              _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+              color: AppTheme.primaryBlueHover,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMobileCards(List<Vehicle> vehicles) {
     return Column(
       children: vehicles.map((vehicle) {
@@ -959,8 +1000,11 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  spacing: AppTheme.space8,
+                  runSpacing: AppTheme.space8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  alignment: WrapAlignment.spaceBetween,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -1026,8 +1070,9 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                   ),
                 ),
                 const SizedBox(height: AppTheme.space12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  spacing: AppTheme.space4,
+                  alignment: WrapAlignment.end,
                   children: [
                     TextButton.icon(
                       onPressed: () {
@@ -1036,7 +1081,6 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                       icon: const Icon(Icons.visibility_outlined, size: 16),
                       label: const Text('Details'),
                     ),
-                    const SizedBox(width: AppTheme.space8),
                     TextButton.icon(
                       onPressed: _deletingIds.contains(vehicle.id)
                           ? null
@@ -1051,7 +1095,6 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                       icon: const Icon(Icons.edit_outlined, size: 16),
                       label: const Text('Edit'),
                     ),
-                    const SizedBox(width: AppTheme.space8),
                     _deletingIds.contains(vehicle.id)
                         ? const Padding(
                             padding: EdgeInsets.symmetric(

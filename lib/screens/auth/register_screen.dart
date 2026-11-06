@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
-import '../../widgets/animated/ambient_grid_pattern.dart';
-import '../../widgets/animated/border_beam.dart';
+import '../../widgets/auth_layout.dart';
 import '../../widgets/brand/stark_logo.dart';
 
 /// Screen allowing new users to create an account for the Stark Group VMS.
@@ -93,6 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
+    if (_isLoading) return;
     setState(() {
       _errorMessage = null;
     });
@@ -101,7 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (_passwordController.text.trim() != _confirmPasswordController.text.trim()) {
+    if (_passwordController.text != _confirmPasswordController.text) {
       setState(() => _errorMessage = 'Passwords do not match.');
       return;
     }
@@ -130,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await AuthService.instance.register(
         _nameController.text.trim(),
         rawEmail,
-        _passwordController.text.trim(),
+        _passwordController.text,
       );
 
       if (mounted) {
@@ -171,317 +172,334 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.brandObsidian,
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(gradient: AppTheme.authBackdrop),
-              child: AmbientGridPattern(
-                spacing: 28,
-                dotRadius: 1.0,
-                dotColor: AppTheme.navy800,
+    return AuthLayout(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Brand Header
+            _buildBrandHeader(),
+            const SizedBox(height: AppTheme.space20),
+            const Divider(height: 1),
+            const SizedBox(height: AppTheme.space20),
+
+            // Screen Title & Subtitle
+            const Text(
+              'Create an Account',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textDark,
               ),
             ),
-          ),
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppTheme.space24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 460),
-                  child: BorderBeam(
-                    borderRadius: AppTheme.radiusLg,
-                    beamColor: AppTheme.accentBlue,
-                    accentColor: AppTheme.primaryBlue,
-                    child: Card(
-                      color: AppTheme.surfaceWhite,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                        side: const BorderSide(color: AppTheme.borderNeutral),
+            const SizedBox(height: AppTheme.space4),
+            const Text(
+              'Enter your details below to register for the fleet portal.',
+              style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
+            ),
+            const SizedBox(height: AppTheme.space16),
+
+            // Security Advisory banner
+            _buildSecurityAdvisory(),
+            const SizedBox(height: AppTheme.space16),
+
+            // Account Already Exists by Email Banner
+            if (_emailAlreadyExists) ...[
+              _buildAccountExistsAlert(
+                _existingEmail ?? _emailController.text.trim(),
+              ),
+              const SizedBox(height: AppTheme.space16),
+            ],
+
+            // General Error message banner
+            if (_errorMessage != null) ...[
+              Container(
+                padding: const EdgeInsets.all(AppTheme.space12),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorRedBg,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  border: Border.all(color: AppTheme.errorRedBorder),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: AppTheme.errorRed,
+                      size: 18,
+                    ),
+                    const SizedBox(width: AppTheme.space8),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: AppTheme.errorRed,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      child: Padding(
-                        padding: EdgeInsets.all(
-                          MediaQuery.sizeOf(context).width < 400
-                              ? AppTheme.space20
-                              : AppTheme.space32,
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Brand Header
-                              _buildBrandHeader(),
-                              const SizedBox(height: AppTheme.space20),
-                              const Divider(height: 1),
-                              const SizedBox(height: AppTheme.space20),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppTheme.space16),
+            ],
 
-                              // Screen Title & Subtitle
-                              const Text(
-                                'Create an Account',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.textDark,
-                                ),
-                              ),
-                        const SizedBox(height: AppTheme.space4),
-                        const Text(
-                          'Enter your details below to register for the fleet portal.',
-                          style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                        ),
-                        const SizedBox(height: AppTheme.space16),
+            // Name Field
+            const Text(
+              'Full Name *',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textDark,
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _nameController,
+              textInputAction: TextInputAction.next,
+              style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
+              decoration: _inputDecoration(
+                'e.g. Tony Stark',
+                Icons.person_outline,
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your full name.';
+                }
+                if (value.trim().length > 120) {
+                  return 'Full name must not exceed 120 characters.';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: AppTheme.space16),
 
-                        // Security Advisory banner
-                        _buildSecurityAdvisory(),
-                        const SizedBox(height: AppTheme.space16),
+            // Email Field (Account Existence Validation strictly on email)
+            const Text(
+              'Email Address *',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textDark,
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _emailController,
+              focusNode: _emailFocusNode,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autocorrect: false,
+              enableSuggestions: false,
+              style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
+              decoration: _inputDecoration(
+                'e.g. user@example.com',
+                Icons.email_outlined,
+              ),
+              onChanged: (_) {
+                if (_emailAlreadyExists) {
+                  setState(() => _emailAlreadyExists = false);
+                }
+              },
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your email address.';
+                }
+                if (!value.contains('@') || !value.contains('.')) {
+                  return 'Please enter a valid email address.';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: AppTheme.space16),
 
-                        // Account Already Exists by Email Banner
-                        if (_emailAlreadyExists) ...[
-                          _buildAccountExistsAlert(_existingEmail ?? _emailController.text.trim()),
-                          const SizedBox(height: AppTheme.space16),
-                        ],
+            // Password Field
+            const Text(
+              'Password *',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textDark,
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.newPassword],
+              autocorrect: false,
+              enableSuggestions: false,
+              style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
+              decoration:
+                  _inputDecoration(
+                    'Enter secure fleet password',
+                    Icons.lock_outline,
+                  ).copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: AppTheme.textMuted,
+                        size: 18,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                  ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter a password.';
+                }
+                if (value != value.trim()) {
+                  return 'Remove spaces at the start or end of the password.';
+                }
+                if (value.length < 6) {
+                  return 'Password must be at least 6 characters.';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Must be at least 6 characters.',
+              style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+            ),
+            const SizedBox(height: AppTheme.space16),
 
-                        // General Error message banner
-                        if (_errorMessage != null) ...[
-                          Container(
-                            padding: const EdgeInsets.all(AppTheme.space12),
-                            decoration: BoxDecoration(
-                              color: AppTheme.errorRedBg,
-                              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                              border: Border.all(color: AppTheme.errorRedBorder),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.error_outline_rounded, color: AppTheme.errorRed, size: 18),
-                                const SizedBox(width: AppTheme.space8),
-                                Expanded(
-                                  child: Text(
-                                    _errorMessage!,
-                                    style: const TextStyle(color: AppTheme.errorRed, fontSize: 13, fontWeight: FontWeight.w500),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: AppTheme.space16),
-                        ],
+            // Confirm Password Field
+            const Text(
+              'Confirm Password *',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textDark,
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _confirmPasswordController,
+              obscureText: _obscureConfirm,
+              textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.newPassword],
+              autocorrect: false,
+              enableSuggestions: false,
+              onFieldSubmitted: (_) => _isLoading ? null : _handleRegister(),
+              style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
+              decoration:
+                  _inputDecoration(
+                    'Re-enter password',
+                    Icons.lock_outline,
+                  ).copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: AppTheme.textMuted,
+                        size: 18,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
+                  ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please confirm your password.';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: AppTheme.space24),
 
-                        // Name Field
-                        const Text(
-                          'Full Name *',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textDark),
-                        ),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _nameController,
-                          textInputAction: TextInputAction.next,
-                          style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
-                          decoration: _inputDecoration('e.g. Tony Stark', Icons.person_outline),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your full name.';
-                            }
-                            if (value.trim().length > 120) {
-                              return 'Full name must not exceed 120 characters.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppTheme.space16),
+            // Submit Register Button
+            ElevatedButton(
+              onPressed: _isLoading ? null : _handleRegister,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                ),
+                elevation: 0,
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 18,
+                      width: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Create Account',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: AppTheme.space20),
 
-                        // Email Field (Account Existence Validation strictly on email)
-                        const Text(
-                          'Email Address *',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textDark),
-                        ),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _emailController,
-                          focusNode: _emailFocusNode,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
-                          decoration: _inputDecoration('e.g. user@example.com', Icons.email_outlined),
-                          onChanged: (_) {
-                            if (_emailAlreadyExists) {
-                              setState(() => _emailAlreadyExists = false);
-                            }
-                          },
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your email address.';
-                            }
-                            if (!value.contains('@') || !value.contains('.')) {
-                              return 'Please enter a valid email address.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppTheme.space16),
-
-                        // Password Field
-                        const Text(
-                          'Password *',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textDark),
-                        ),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.newPassword],
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
-                          decoration: _inputDecoration('Enter secure fleet password', Icons.lock_outline).copyWith(
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                color: AppTheme.textMuted,
-                                size: 18,
-                              ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter a password.';
-                            }
-                            if (value.trim().length < 6) {
-                              return 'Password must be at least 6 characters.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Must be at least 6 characters.',
-                          style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
-                        ),
-                        const SizedBox(height: AppTheme.space16),
-
-                        // Confirm Password Field
-                        const Text(
-                          'Confirm Password *',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textDark),
-                        ),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: _obscureConfirm,
-                          textInputAction: TextInputAction.done,
-                          autofillHints: const [AutofillHints.newPassword],
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          onFieldSubmitted: (_) => _isLoading ? null : _handleRegister(),
-                          style: const TextStyle(color: AppTheme.textDark, fontSize: 14),
-                          decoration: _inputDecoration('Re-enter password', Icons.lock_outline).copyWith(
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                color: AppTheme.textMuted,
-                                size: 18,
-                              ),
-                              onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please confirm your password.';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppTheme.space24),
-
-                        // Submit Register Button
-                        ElevatedButton(
-                          onPressed: _isLoading ? null : _handleRegister,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryBlue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
-                            elevation: 0,
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 18,
-                                  width: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : const Text('Create Account', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                        ),
-                        const SizedBox(height: AppTheme.space20),
-
-                        // Login Redirection Link
-                        Wrap(
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            const Text(
-                              'Already have an account? ',
-                              style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                final email = _emailController.text.trim();
-                                Navigator.of(context).pushReplacementNamed(
-                                  AppRouter.loginRoute,
-                                  arguments: email.isNotEmpty ? email : null,
-                                );
-                              },
-                              child: const Text(
-                                'Sign In',
-                                style: TextStyle(
-                                  color: AppTheme.primaryBlue,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Return to Home Link
-                        TextButton.icon(
-                          onPressed: () {
-                            AppRouter.returnToHome(context);
-                          },
-                          icon: const Icon(Icons.arrow_back, size: 14, color: AppTheme.textMuted),
-                          label: const Text('Return to Home', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
-                        ),
-                      ],
+            // Login Redirection Link
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text(
+                  'Already have an account? ',
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                ),
+                InkWell(
+                  onTap: () {
+                    final email = _emailController.text.trim();
+                    Navigator.of(context).pushReplacementNamed(
+                      AppRouter.loginRoute,
+                      arguments: email.isNotEmpty ? email : null,
+                    );
+                  },
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(
+                      color: AppTheme.primaryBlue,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ),
+            const SizedBox(height: 8),
+
+            // Return to Home Link
+            if (AppRouter.isWebWorkspace)
+              TextButton.icon(
+                onPressed: () {
+                  AppRouter.returnToHome(context);
+                },
+                icon: const Icon(
+                  Icons.arrow_back,
+                  size: 14,
+                  color: AppTheme.textMuted,
+                ),
+                label: const Text(
+                  'Return to Home',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                ),
+              ),
+          ],
         ),
       ),
-    ),
-  ],
-),
-);
-}
+    );
+  }
 
   Widget _buildBrandHeader() {
-    return const StarkLogo.light(
-      size: StarkLogoSize.medium,
-      showBadge: true,
-    );
+    return const StarkLogo.light(size: StarkLogoSize.medium, showBadge: true);
   }
 
   Widget _buildSecurityAdvisory() {
@@ -526,7 +544,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         children: [
           Row(
             children: const [
-              Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFFD97706)),
+              Icon(
+                Icons.info_outline_rounded,
+                size: 18,
+                color: Color(0xFFD97706),
+              ),
               SizedBox(width: 8),
               Text(
                 'Account Already Exists',
@@ -541,7 +563,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 6),
           Text(
             'An account with email "$email" is already registered.',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF92400E), height: 1.3),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF92400E),
+              height: 1.3,
+            ),
           ),
           const SizedBox(height: 10),
           Row(
@@ -560,7 +586,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     backgroundColor: AppTheme.navy900,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -568,16 +597,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    Navigator.of(context).pushNamed(
-                      AppRouter.resetPasswordRoute,
-                      arguments: email,
-                    );
+                    Navigator.of(
+                      context,
+                    ).pushNamed(AppRouter.resetPasswordRoute, arguments: email);
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF92400E),
                     side: const BorderSide(color: Color(0xFFD97706)),
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    textStyle: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   child: const Text('Reset Password'),
                 ),

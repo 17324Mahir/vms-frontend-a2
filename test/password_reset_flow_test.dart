@@ -58,9 +58,9 @@ void main() {
 
       expect(find.text('Password123!'), findsNWidgets(2));
 
-      // Verify Sign In and Return to Home buttons are present
+      // Standalone Flutter routes connect account screens directly.
       expect(find.text('Sign In'), findsOneWidget);
-      expect(find.text('Return to Home'), findsOneWidget);
+      expect(find.text('Return to Home'), findsNothing);
     });
   });
 }

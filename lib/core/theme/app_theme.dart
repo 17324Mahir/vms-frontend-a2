@@ -11,19 +11,32 @@ import 'package:flutter/material.dart';
 /// - Subtle borders (#DFE6F2) and minimal shadows.
 class AppTheme {
   // Brand Palette: Deep Navy & Blue
-  static const Color brandObsidian = Color(0xFF081121); // Modern deep obsidian navy
+  static const Color brandObsidian = Color(
+    0xFF081121,
+  ); // Modern deep obsidian navy
   static const Color brandNavy = Color(0xFF091226); // Main brand/sidebar navy
   static const Color navy900 = brandNavy;
   static const Color navy800 = Color(0xFF233052); // Sidebar hover/borders
   static const Color navy700 = Color(0xFF334155); // Muted navy
 
-  static const Color primaryBlue = Color(0xFF275CF5); // Primary actions & selected
-  static const Color primaryIndigo = Color(0xFF4F46E5); // Modern electric indigo accent
-  static const Color primaryBlueHover = Color(0xFF1749DD); // Active/pressed blue
+  static const Color primaryBlue = Color(
+    0xFF275CF5,
+  ); // Primary actions & selected
+  static const Color primaryIndigo = Color(
+    0xFF4F46E5,
+  ); // Modern electric indigo accent
+  static const Color primaryBlueHover = Color(
+    0xFF1749DD,
+  ); // Active/pressed blue
   static const Color primaryBlueSubtle = Color(0xFFEDF3FF); // Selected tint
-  static const Color accentBlue = Color(0xFF8BADFF); // Blue glow & telemetry highlight
+  static const Color accentBlue = Color(
+    0xFF8BADFF,
+  ); // Blue glow & telemetry highlight
 
-  // Brand Gradients (Magic UI & 21st.dev style)
+  static const Color onNavyMuted = Color(0xFFBAC9E4);
+  static const Color onNavyLabel = Color(0xFFA6C2FF);
+
+  // Brand Gradients
   static const LinearGradient brandGradient = LinearGradient(
     colors: [primaryBlue, primaryBlueHover],
     begin: Alignment.topLeft,
@@ -36,6 +49,12 @@ class AppTheme {
     end: Alignment.bottomCenter,
   );
 
+  static const LinearGradient workspaceHeroGradient = LinearGradient(
+    colors: [brandObsidian, Color(0xFF18346C)],
+    begin: Alignment.centerLeft,
+    end: Alignment.topRight,
+  );
+
   static const RadialGradient authBackdrop = RadialGradient(
     center: Alignment(0.65, 0.15),
     radius: 1.1,
@@ -45,26 +64,36 @@ class AppTheme {
   // Neutral Background & Surfaces
   static const Color canvasLight = Color(0xFFF3F6FD); // Main page canvas
   static const Color neutralBg = canvasLight;
-  static const Color surfaceWhite = Color(0xFFFFFFFF); // Content cards & surfaces
+  static const Color surfaceWhite = Color(
+    0xFFFFFFFF,
+  ); // Content cards & surfaces
   static const Color borderNeutral = Color(0xFFDFE6F2); // Subtle borders
   static const Color borderLight = borderNeutral;
-  static const Color borderSubtle = Color(0xFFF1F5F9); // Table dividers / light borders
-  static const Color borderHover = Color(0xFF9BB7FF); // Interactive card hover border
+  static const Color borderSubtle = Color(
+    0xFFF1F5F9,
+  ); // Table dividers / light borders
+  static const Color borderHover = Color(
+    0xFF9BB7FF,
+  ); // Interactive card hover border
 
   // Typography Neutrals
   static const Color textDark = Color(0xFF101C34); // High-contrast primary text
   static const Color textPrimary = textDark;
-  static const Color textMuted = Color(0xFF53637C); // High-contrast secondary / helper text
+  static const Color textMuted = Color(
+    0xFF53637C,
+  ); // High-contrast secondary / helper text
   static const Color textSecondary = textMuted;
   static const Color textDisabled = Color(0xFF94A3B8); // Inactive / placeholder
 
   // Feedback Colors (WCAG AAA compliant)
-  static const Color errorRed = Color(0xFFB91C1C); // Destructive / validation error
+  static const Color errorRed = Color(
+    0xFFB91C1C,
+  ); // Destructive / validation error
   static const Color errorRedBg = Color(0xFFFEF2F2); // Error alert background
   static const Color errorRedBorder = Color(0xFFFECACA); // Error alert border
 
   // Status Colors (Green, Amber, Neutral, Purple)
-  static const Color statusActiveText = Color(0xFF059669);
+  static const Color statusActiveText = Color(0xFF047857);
   static const Color statusActiveBg = Color(0xFFECFDF5);
   static const Color statusActiveBorder = Color(0xFFA7F3D0);
 
@@ -72,7 +101,7 @@ class AppTheme {
   static const Color statusInactiveBg = Color(0xFFF1F5F9);
   static const Color statusInactiveBorder = Color(0xFFCBD5E1);
 
-  static const Color statusMaintenanceText = Color(0xFFD97706);
+  static const Color statusMaintenanceText = Color(0xFF92400E);
   static const Color statusMaintenanceBg = Color(0xFFFFFBEB);
   static const Color statusMaintenanceBorder = Color(0xFFFDE68A);
 
@@ -120,9 +149,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
         iconTheme: IconThemeData(color: textDark),
-        shape: Border(
-          bottom: BorderSide(color: borderNeutral, width: 1),
-        ),
+        shape: Border(bottom: BorderSide(color: borderNeutral, width: 1)),
       ),
       cardTheme: CardThemeData(
         color: surfaceWhite,
@@ -141,10 +168,7 @@ class AppTheme {
           horizontal: space16,
           vertical: space12,
         ),
-        hintStyle: const TextStyle(
-          color: textDisabled,
-          fontSize: 14,
-        ),
+        hintStyle: const TextStyle(color: textDisabled, fontSize: 14),
         labelStyle: const TextStyle(
           color: textMuted,
           fontSize: 14,
@@ -183,9 +207,17 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMd),
           ),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: surfaceWhite,
+          minimumSize: const Size(48, 42),
+          padding: const EdgeInsets.symmetric(horizontal: space16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
         ),
       ),
@@ -201,10 +233,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radiusMd),
           ),
-          textStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
       ),
       dividerTheme: const DividerThemeData(

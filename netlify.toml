@@ -3,6 +3,7 @@
   command = "./scripts/build_web.sh"
 
 [build.environment]
+  NODE_VERSION = "24"
   API_BASE_URL = "https://vms-backend-a2.onrender.com"
 
 # Single-Page Application (SPA) fallback routing
@@ -24,6 +25,11 @@
 # Prevent caching of index.html and bootstrapping files so users always receive latest app bundles
 [[headers]]
   for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/workspace.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
 

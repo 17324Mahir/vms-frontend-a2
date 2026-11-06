@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_theme.dart';
 import '../../data/driver_repository.dart';
 import '../../models/driver.dart';
 import '../../router/app_router.dart';
-import '../../widgets/animated/spotlight_hover_card.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/workspace_section_header.dart';
+import '../../widgets/workspace_record_card.dart';
 import '../../widgets/confirmation_dialog.dart';
 
 class DriverListScreen extends StatefulWidget {
@@ -45,7 +47,9 @@ class _DriverListScreenState extends State<DriverListScreen> {
       final pageRes = await _driverRepo.searchDrivers(
         page: _currentPage,
         size: _pageSize,
-        search: _searchCtrl.text.trim().isNotEmpty ? _searchCtrl.text.trim() : null,
+        search: _searchCtrl.text.trim().isNotEmpty
+            ? _searchCtrl.text.trim()
+            : null,
         status: _selectedStatus,
       );
 
@@ -84,7 +88,8 @@ class _DriverListScreenState extends State<DriverListScreen> {
     final confirmed = await ConfirmationDialog.show(
       context: context,
       title: 'Delete Driver',
-      message: 'Are you sure you want to remove driver ${driver.name} (${driver.licenseNumber})?',
+      message:
+          'Are you sure you want to remove driver ${driver.name} (${driver.licenseNumber})?',
       confirmLabel: 'Delete',
       isDestructive: true,
     );
@@ -120,7 +125,9 @@ class _DriverListScreenState extends State<DriverListScreen> {
       title: 'Drivers',
       primaryAction: FilledButton.icon(
         onPressed: () {
-          Navigator.of(context).pushNamed(AppRouter.driverNewRoute).then((_) => _loadDrivers());
+          Navigator.of(context)
+              .pushNamed(AppRouter.driverNewRoute)
+              .then((_) => _loadDrivers());
         },
         icon: const Icon(Icons.add, size: 18),
         label: const Text('Add Driver'),
@@ -129,14 +136,20 @@ class _DriverListScreenState extends State<DriverListScreen> {
           foregroundColor: Colors.white,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.space24),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppTheme.space16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const WorkspaceSectionHeader(
+              label: 'DRIVER WORKFORCE',
+              title: 'Driver Directory',
+              description: 'Manage driver records, monitor license expiry and see current assignments.',
+            ),
+            const SizedBox(height: AppTheme.space16),
             _buildFiltersCard(),
             const SizedBox(height: AppTheme.space16),
-            Expanded(child: _buildDriverList()),
+            _buildDriverList(),
             const SizedBox(height: AppTheme.space12),
             _buildPaginationBar(),
           ],
@@ -191,7 +204,10 @@ class _DriverListScreenState extends State<DriverListScreen> {
                 border: OutlineInputBorder(),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('All Statuses')),
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('All Statuses'),
+                ),
                 ...DriverStatus.values.map(
                   (s) => DropdownMenuItem(value: s, child: Text(s.label)),
                 ),
@@ -212,7 +228,10 @@ class _DriverListScreenState extends State<DriverListScreen> {
 
   Widget _buildDriverList() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Padding(
+        padding: EdgeInsets.all(AppTheme.space32),
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (_errorMessage != null) {
@@ -235,7 +254,11 @@ class _DriverListScreenState extends State<DriverListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.badge_outlined, size: 48, color: Color(0xFF94A3B8)),
+            const Icon(
+              Icons.badge_outlined,
+              size: 48,
+              color: Color(0xFF94A3B8),
+            ),
             const SizedBox(height: AppTheme.space12),
             const Text(
               'No drivers found',
@@ -249,7 +272,9 @@ class _DriverListScreenState extends State<DriverListScreen> {
             const SizedBox(height: AppTheme.space16),
             FilledButton(
               onPressed: () {
-                Navigator.of(context).pushNamed(AppRouter.driverNewRoute).then((_) => _loadDrivers());
+                Navigator.of(context)
+                    .pushNamed(AppRouter.driverNewRoute)
+                    .then((_) => _loadDrivers());
               },
               child: const Text('Add Driver'),
             ),
@@ -259,100 +284,115 @@ class _DriverListScreenState extends State<DriverListScreen> {
     }
 
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: _drivers.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppTheme.space8),
       itemBuilder: (context, i) {
         final d = _drivers[i];
-        return SpotlightHoverCard(
-          padding: const EdgeInsets.all(AppTheme.space16),
-          borderRadius: AppTheme.radiusMd,
-          child: Row(
+        return WorkspaceRecordCard(
+          leading: CircleAvatar(
+            radius: 21,
+            backgroundColor: AppTheme.primaryBlueSubtle,
+            child: Text(
+              d.name.isEmpty ? 'D' : d.name.characters.first.toUpperCase(),
+              style: const TextStyle(
+                color: AppTheme.primaryBlueHover,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          details: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: d.status.backgroundColor,
-                child: Text(
-                  d.name.isNotEmpty ? d.name[0].toUpperCase() : 'D',
-                  style: TextStyle(color: d.status.textColor, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              const SizedBox(width: AppTheme.space16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          d.name,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                        ),
-                        const SizedBox(width: AppTheme.space8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: d.status.backgroundColor,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                          ),
-                          child: Text(
-                            d.status.label,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: d.status.textColor),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'License: ${d.licenseNumber} • ${d.phone ?? 'No phone'}${d.email != null ? ' • ${d.email}' : ''}',
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        if (d.assignedVehicleNumber != null) ...[
-                          const Icon(Icons.directions_car, size: 14, color: Color(0xFF2563EB)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Assigned: ${d.assignedVehicleNumber}',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF2563EB)),
-                          ),
-                          const SizedBox(width: AppTheme.space12),
-                        ],
-                        if (d.licenseExpiryDate != null)
-                          Text(
-                            'Expiry: ${d.licenseExpiryDate!.toIso8601String().substring(0, 10)} (${d.expiryStatus})',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: d.expiryStatus == 'EXPIRED'
-                                  ? const Color(0xFFDC2626)
-                                  : (d.expiryStatus == 'EXPIRING_SOON' ? const Color(0xFFB45309) : const Color(0xFF15803D)),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
+              Wrap(
+                spacing: AppTheme.space8,
+                runSpacing: AppTheme.space4,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  IconButton(
-                    tooltip: 'Edit Driver',
-                    icon: const Icon(Icons.edit_outlined, size: 20, color: AppTheme.navy800),
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(AppRouter.driverEditRoute, arguments: d).then((_) => _loadDrivers());
-                    },
+                  Text(
+                    d.name,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                  IconButton(
-                    tooltip: 'Delete Driver',
-                    icon: const Icon(Icons.delete_outline, size: 20, color: Color(0xFFDC2626)),
-                    onPressed: () => _handleDeleteDriver(d),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: d.status.backgroundColor,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                    ),
+                    child: Text(
+                      d.status.label,
+                      style: TextStyle(
+                        color: d.status.textColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: AppTheme.space4),
+              Text(
+                'License: ${d.licenseNumber} · ${d.phone ?? 'No phone'}${d.email != null ? ' · ${d.email}' : ''}',
+                style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+              ),
+              if (d.assignedVehicleNumber != null ||
+                  d.licenseExpiryDate != null)
+                const SizedBox(height: AppTheme.space4),
+              Wrap(
+                spacing: AppTheme.space12,
+                runSpacing: AppTheme.space4,
+                children: [
+                  if (d.assignedVehicleNumber != null)
+                    Text(
+                      'Assigned: ${d.assignedVehicleNumber}',
+                      style: const TextStyle(
+                        color: AppTheme.primaryBlueHover,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  if (d.licenseExpiryDate != null)
+                    Text(
+                      'License expiry: ${d.licenseExpiryDate!.toIso8601String().substring(0, 10)} (${d.expiryStatus})',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: d.expiryStatus == 'EXPIRED'
+                            ? AppTheme.errorRed
+                            : d.expiryStatus == 'EXPIRING_SOON'
+                            ? AppTheme.statusMaintenanceText
+                            : AppTheme.textMuted,
+                      ),
+                    ),
                 ],
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              tooltip: 'Edit Driver',
+              icon: const Icon(
+                Icons.edit_outlined,
+                color: AppTheme.primaryBlueHover,
+              ),
+              onPressed: () {
+                Navigator.of(context)
+                    .pushNamed(AppRouter.driverEditRoute, arguments: d)
+                    .then((_) => _loadDrivers());
+              },
+            ),
+            IconButton(
+              tooltip: 'Delete Driver',
+              icon: const Icon(Icons.delete_outline, color: AppTheme.errorRed),
+              onPressed: () => _handleDeleteDriver(d),
+            ),
+          ],
         );
       },
     );
@@ -360,14 +400,18 @@ class _DriverListScreenState extends State<DriverListScreen> {
 
   Widget _buildPaginationBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTheme.space16,
+        vertical: AppTheme.space8,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
         border: Border.all(color: AppTheme.borderLight),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
             'Showing ${_drivers.length} of $_totalElements drivers',
@@ -388,7 +432,10 @@ class _DriverListScreenState extends State<DriverListScreen> {
               ),
               Text(
                 'Page ${_currentPage + 1} of $_totalPages',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.chevron_right),

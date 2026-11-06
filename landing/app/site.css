@@ -32,8 +32,6 @@ section[id] { scroll-margin-top: 20px; }
 .button-blue:hover { background: #1749dd; }
 .button-outline { color: #f3f7ff; background: #a7c4ff0b; border-color: #9dbaff48; }
 .button-outline:hover { background: #a7c4ff22; border-color: #9dbaff; }
-.button-light { background: #edf2ff; color: #1947c8; }
-.button-light:hover { background: #dfe9ff; }
 .mobile-menu { display: none; }
 .hero {
   position: relative;
@@ -98,8 +96,11 @@ section[id] { scroll-margin-top: 20px; }
 .section-label span { display: inline-grid; place-items: center; min-width: 27px; min-height: 25px; border: 1px solid #b7cbff; border-radius: 5px; background: #edf3ff; letter-spacing: 0; }
 h2 { font-size: clamp(36px, 4.1vw, 63px); line-height: 1.03; letter-spacing: -.066em; margin: 15px 0; font-weight: 720; }
 .section-intro p, .benefits p { color: var(--muted); line-height: 1.65; max-width: 510px; font-size: 16px; margin-top: 13px; }
-.feature-grid, .steps, .pricing-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.feature-card, .steps article, .plan { border: 1px solid var(--line); border-radius: 13px; background: #fff; padding: 26px; transition: border-color .2s, box-shadow .2s; }
+.feature-grid, .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.feature-card, .steps article, .free-section { display: grid; grid-template-columns: 1fr minmax(290px, 440px); align-items: center; gap: 50px; }
+.free-section .section-intro { margin-bottom: 0; }
+.free-plan { width: 100%; }
+.plan { border: 1px solid var(--line); border-radius: 13px; background: #fff; padding: 26px; transition: border-color .2s, box-shadow .2s; }
 .feature-card:hover, .plan:hover { border-color: #9bb7ff; box-shadow: 0 10px 30px #244d9211; }
 .feature-top { display: flex; align-items: flex-start; justify-content: space-between; }
 .feature-top > span:last-child { font: 700 9px ui-monospace, monospace; letter-spacing: .11em; color: #526583; }
@@ -218,7 +219,8 @@ h2 { font-size: clamp(36px, 4.1vw, 63px); line-height: 1.03; letter-spacing: -.0
   .feature-card p, .steps p { font-size: 13px; }
   .split { display: block; }
   .split > p { padding: 0; }
-  .steps, .pricing-grid, .benefits-inner { grid-template-columns: 1fr; }
+  .free-section { grid-template-columns: 1fr; gap: 24px; }
+  .steps, .benefits-inner { grid-template-columns: 1fr; }
   .benefits-inner { gap: 21px; }
   .dash-body { grid-template-columns: minmax(0,1fr); }
   .dash-side { display: none; }

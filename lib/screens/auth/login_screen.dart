@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
-import '../../widgets/animated/ambient_grid_pattern.dart';
-import '../../widgets/animated/border_beam.dart';
+import '../../widgets/auth_layout.dart';
 import '../../widgets/brand/stark_logo.dart';
 
 /// Admin Login screen for the Stark Group VMS.
@@ -66,7 +66,9 @@ class _LoginScreenState extends State<LoginScreen> {
     String email = _emailController.text.trim();
     String password = _passwordController.text; // Do NOT trim password
 
-    if (email.toLowerCase() == 'test' || email.toLowerCase() == 'admin' || email.toLowerCase() == 'demo') {
+    if (email.toLowerCase() == 'test' ||
+        email.toLowerCase() == 'admin' ||
+        email.toLowerCase() == 'demo') {
       email = 'test@starkgroup.test';
       if (password.isEmpty) {
         password = 'Password123!';
@@ -114,90 +116,46 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.brandObsidian,
-      body: Stack(
-        children: [
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(gradient: AppTheme.authBackdrop),
-              child: AmbientGridPattern(
-                spacing: 28,
-                dotRadius: 1.0,
-                dotColor: AppTheme.navy800,
+    return AuthLayout(
+      child: AutofillGroup(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildBrandHeader(),
+              const SizedBox(height: AppTheme.space24),
+              const Divider(height: 1),
+              const SizedBox(height: AppTheme.space24),
+              ValueListenableBuilder<String?>(
+                valueListenable: AuthService.instance.sessionExpiredMessage,
+                builder: (context, sessionNotice, _) {
+                  if (sessionNotice != null) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppTheme.space16),
+                      child: _buildSessionNoticeAlert(sessionNotice),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
-            ),
+              if (_authErrorMessage != null) ...[
+                _buildAuthErrorAlert(_authErrorMessage!),
+                const SizedBox(height: AppTheme.space16),
+              ],
+              _buildEmailField(),
+              const SizedBox(height: AppTheme.space16),
+              _buildPasswordField(),
+              const SizedBox(height: AppTheme.space24),
+              _buildSubmitButton(),
+              const SizedBox(height: AppTheme.space16),
+              _buildDemoCredentialsBox(),
+              const SizedBox(height: AppTheme.space16),
+              _buildRegisterLink(),
+            ],
           ),
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppTheme.space24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  child: BorderBeam(
-                    borderRadius: AppTheme.radiusLg,
-                    beamColor: AppTheme.accentBlue,
-                    accentColor: AppTheme.primaryBlue,
-                    child: Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                        side: const BorderSide(color: AppTheme.borderNeutral),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(
-                          MediaQuery.sizeOf(context).width < 400
-                              ? AppTheme.space20
-                              : AppTheme.space32,
-                        ),
-                        child: AutofillGroup(
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildBrandHeader(),
-                                const SizedBox(height: AppTheme.space24),
-                                const Divider(height: 1),
-                                const SizedBox(height: AppTheme.space24),
-                                ValueListenableBuilder<String?>(
-                                  valueListenable: AuthService.instance.sessionExpiredMessage,
-                                  builder: (context, sessionNotice, _) {
-                                    if (sessionNotice != null) {
-                                      return Padding(
-                                        padding: const EdgeInsets.only(bottom: AppTheme.space16),
-                                        child: _buildSessionNoticeAlert(sessionNotice),
-                                      );
-                                    }
-                                    return const SizedBox.shrink();
-                                  },
-                                ),
-                                if (_authErrorMessage != null) ...[
-                                  _buildAuthErrorAlert(_authErrorMessage!),
-                                  const SizedBox(height: AppTheme.space16),
-                                ],
-                                _buildEmailField(),
-                                const SizedBox(height: AppTheme.space16),
-                                _buildPasswordField(),
-                                const SizedBox(height: AppTheme.space24),
-                                _buildSubmitButton(),
-                                const SizedBox(height: AppTheme.space16),
-                                _buildDemoCredentialsBox(),
-                                const SizedBox(height: AppTheme.space16),
-                                _buildRegisterLink(),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -206,10 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StarkLogo.light(
-          size: StarkLogoSize.medium,
-          showBadge: true,
-        ),
+        StarkLogo.light(size: StarkLogoSize.medium, showBadge: true),
         SizedBox(height: AppTheme.space16),
         Text(
           'Sign in to your account',
@@ -266,7 +221,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildAuthErrorAlert(String message) {
     final currentEmail = _emailController.text.trim();
-    final isInvalidCreds = message.toLowerCase().contains('incorrect') || message.toLowerCase().contains('invalid');
+    final isInvalidCreds =
+        message.toLowerCase().contains('incorrect') ||
+        message.toLowerCase().contains('invalid');
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.space12),
@@ -310,7 +267,11 @@ class _LoginScreenState extends State<LoginScreen> {
               },
               child: Row(
                 children: const [
-                  Icon(Icons.person_add_outlined, size: 14, color: AppTheme.primaryBlue),
+                  Icon(
+                    Icons.person_add_outlined,
+                    size: 14,
+                    color: AppTheme.primaryBlue,
+                  ),
                   SizedBox(width: 4),
                   Expanded(
                     child: Text(
@@ -352,16 +313,17 @@ class _LoginScreenState extends State<LoginScreen> {
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
           onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
-          decoration: const InputDecoration(
-            hintText: 'user@example.com',
-          ),
+          decoration: const InputDecoration(hintText: 'user@example.com'),
           validator: (value) {
             final trimmed = value?.trim() ?? '';
             if (trimmed.isEmpty) {
               return 'Please enter your email address.';
             }
             final lower = trimmed.toLowerCase();
-            if (lower == 'test' || lower == 'admin' || lower == 'demo' || lower == 'fleet') {
+            if (lower == 'test' ||
+                lower == 'admin' ||
+                lower == 'demo' ||
+                lower == 'fleet') {
               return null;
             }
             final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
@@ -426,12 +388,15 @@ class _LoginScreenState extends State<LoginScreen> {
             hintText: 'Enter your password',
             suffixIcon: IconButton(
               icon: Icon(
-                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 size: 20,
                 color: AppTheme.textMuted,
               ),
               tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
           validator: (value) {
@@ -474,7 +439,11 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           Row(
             children: const [
-              Icon(Icons.vpn_key_outlined, size: 16, color: AppTheme.primaryBlue),
+              Icon(
+                Icons.vpn_key_outlined,
+                size: 16,
+                color: AppTheme.primaryBlue,
+              ),
               SizedBox(width: 6),
               Text(
                 'Demo Credentials',
@@ -508,7 +477,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     _handleSubmit();
                   },
             icon: const Icon(Icons.flash_on, size: 16),
-            label: const Text('1-Click Sign In as Demo Admin', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            label: const Text(
+              '1-Click Sign In as Demo Admin',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 8),
               minimumSize: const Size(0, 36),
@@ -527,15 +499,9 @@ class _LoginScreenState extends State<LoginScreen> {
               minimumSize: const Size(0, 32),
               side: const BorderSide(color: AppTheme.primaryBlue),
             ),
-            child: const Text('Auto-fill Form Fields Only', style: TextStyle(fontSize: 12)),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            '💡 Demo Security Tip: Do not enter your personal Google/Gmail password. Use a demo fleet password (e.g. Password123!). Reusing your Google password on external test domains triggers Chrome\'s password reuse warning dialog (click "Ignore" to proceed).',
-            style: TextStyle(
-              fontSize: 10.5,
-              color: AppTheme.textMuted,
-              height: 1.3,
+            child: const Text(
+              'Auto-fill Form Fields Only',
+              style: TextStyle(fontSize: 12),
             ),
           ),
         ],
@@ -562,17 +528,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   arguments: email.isNotEmpty ? email : null,
                 );
               },
-              child: const Text('Register here', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Register here',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
-        TextButton.icon(
-          onPressed: () {
-            AppRouter.returnToHome(context);
-          },
-          icon: const Icon(Icons.arrow_back, size: 14),
-          label: const Text('Return to Home', style: TextStyle(fontSize: 12)),
-        ),
+        if (AppRouter.isWebWorkspace)
+          TextButton.icon(
+            onPressed: () {
+              AppRouter.returnToHome(context);
+            },
+            icon: const Icon(Icons.arrow_back, size: 14),
+            label: const Text('Return to Home', style: TextStyle(fontSize: 12)),
+          ),
       ],
     );
   }

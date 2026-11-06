@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/driver_repository.dart';
 import '../../models/driver.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/workspace_section_header.dart';
 
 class DriverFormScreen extends StatefulWidget {
   final Driver? driverToEdit;
@@ -67,11 +69,18 @@ class _DriverFormScreenState extends State<DriverFormScreen> {
     final payload = {
       'name': _nameCtrl.text.trim(),
       'licenseNumber': _licenseCtrl.text.trim(),
-      'phone': _phoneCtrl.text.trim().isNotEmpty ? _phoneCtrl.text.trim() : null,
-      'email': _emailCtrl.text.trim().isNotEmpty ? _emailCtrl.text.trim() : null,
+      'phone': _phoneCtrl.text.trim().isNotEmpty
+          ? _phoneCtrl.text.trim()
+          : null,
+      'email': _emailCtrl.text.trim().isNotEmpty
+          ? _emailCtrl.text.trim()
+          : null,
       'status': _status.toBackendString(),
       if (_licenseExpiryDate != null)
-        'licenseExpiryDate': _licenseExpiryDate!.toIso8601String().substring(0, 10),
+        'licenseExpiryDate': _licenseExpiryDate!.toIso8601String().substring(
+          0,
+          10,
+        ),
     };
 
     try {
@@ -119,7 +128,7 @@ class _DriverFormScreenState extends State<DriverFormScreen> {
       onBack: () => Navigator.of(context).pop(),
       child: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppTheme.space24),
+          padding: const EdgeInsets.all(AppTheme.space16),
           child: Container(
             constraints: const BoxConstraints(maxWidth: 600),
             padding: const EdgeInsets.all(AppTheme.space24),
@@ -134,14 +143,12 @@ class _DriverFormScreenState extends State<DriverFormScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    _isEditMode ? 'Update Driver Profile' : 'Driver Registration',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textDark),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Ensure driving credentials and license details match government records.',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                  WorkspaceSectionHeader(
+                    label: 'DRIVER WORKFORCE',
+                    title: _isEditMode
+                        ? 'Update Driver Profile'
+                        : 'Driver Registration',
+                    description: 'Keep contact information, license details and availability up to date.',
                   ),
                   const SizedBox(height: AppTheme.space20),
                   if (_errorMessage != null) ...[
@@ -154,12 +161,19 @@ class _DriverFormScreenState extends State<DriverFormScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.error_outline, color: Color(0xFFDC2626), size: 20),
+                          const Icon(
+                            Icons.error_outline,
+                            color: Color(0xFFDC2626),
+                            size: 20,
+                          ),
                           const SizedBox(width: AppTheme.space8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13),
+                              style: const TextStyle(
+                                color: Color(0xFFB91C1C),
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -233,7 +247,10 @@ class _DriverFormScreenState extends State<DriverFormScreen> {
                             border: OutlineInputBorder(),
                           ),
                           items: DriverStatus.values.map((s) {
-                            return DropdownMenuItem(value: s, child: Text(s.label));
+                            return DropdownMenuItem(
+                              value: s,
+                              child: Text(s.label),
+                            );
                           }).toList(),
                           onChanged: (val) {
                             if (val != null) setState(() => _status = val);
@@ -261,7 +278,9 @@ class _DriverFormScreenState extends State<DriverFormScreen> {
                             ),
                             child: Text(
                               _licenseExpiryDate != null
-                                  ? _licenseExpiryDate!.toIso8601String().substring(0, 10)
+                                  ? _licenseExpiryDate!
+                                        .toIso8601String()
+                                        .substring(0, 10)
                                   : 'Select Date',
                             ),
                           ),
@@ -274,17 +293,32 @@ class _DriverFormScreenState extends State<DriverFormScreen> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       TextButton(
-                        onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+                        onPressed: _isSaving
+                            ? null
+                            : () => Navigator.of(context).pop(),
                         child: const Text('Cancel'),
                       ),
                       const SizedBox(width: AppTheme.space12),
                       FilledButton.icon(
                         onPressed: _isSaving ? null : _submit,
                         icon: _isSaving
-                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
                             : const Icon(Icons.check, size: 18),
-                        label: Text(_isSaving ? 'Saving...' : (_isEditMode ? 'Update Driver' : 'Save Driver')),
-                        style: FilledButton.styleFrom(backgroundColor: AppTheme.navy900),
+                        label: Text(
+                          _isSaving
+                              ? 'Saving...'
+                              : (_isEditMode ? 'Update Driver' : 'Save Driver'),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.navy900,
+                        ),
                       ),
                     ],
                   ),

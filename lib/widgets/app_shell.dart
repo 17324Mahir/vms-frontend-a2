@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../core/theme/app_theme.dart';
 import '../core/utils/responsive.dart';
 import '../data/auth/auth_service.dart';
 import '../router/app_router.dart';
-import 'animated/pulsing_beacon.dart';
 import 'brand/stark_logo.dart';
 
 /// Top-level application shell providing persistent sidebar on desktop,
@@ -26,10 +26,8 @@ class AppShell extends StatelessWidget {
 
   void _handleSignOut(BuildContext context) {
     AuthService.instance.signOut();
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRouter.loginRoute,
-      (route) => false,
-    );
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil(AppRouter.loginRoute, (route) => false);
   }
 
   static String _getUserInitials(String email) {
@@ -46,183 +44,199 @@ class AppShell extends StatelessWidget {
     final namePart = email.split('@')[0];
     return namePart
         .split('.')
-        .map((part) => part.isNotEmpty ? part[0].toUpperCase() + part.substring(1) : '')
+        .map(
+          (part) =>
+              part.isNotEmpty ? part[0].toUpperCase() + part.substring(1) : '',
+        )
         .join(' ');
   }
 
   @override
   Widget build(BuildContext context) {
     final isDesktop = Responsive.isDesktop(context);
+    final compactActions =
+        MediaQuery.sizeOf(context).width < 600 && primaryAction != null;
 
-    return Scaffold(
-      backgroundColor: AppTheme.neutralBg,
-      drawer: isDesktop ? null : _buildDrawer(context),
-      appBar: AppBar(
-        leading: showBackButton
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, size: 20),
-                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                onPressed: onBack ?? () => Navigator.of(context).pop(),
-              )
-            : (isDesktop
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (isDesktop) SizedBox(width: 256, child: _buildNavigation(context)),
+        Expanded(
+          child: Scaffold(
+            backgroundColor: AppTheme.canvasLight,
+            drawer: isDesktop
                 ? null
-                : Builder(
-                    builder: (ctx) => IconButton(
-                      icon: const Icon(Icons.menu),
-                      tooltip: 'Open navigation menu',
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
-                    ),
-                  )),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textDark,
-            letterSpacing: -0.3,
+                : Drawer(
+                    backgroundColor: AppTheme.brandNavy,
+                    child: _buildNavigation(context, isDrawer: true),
+                  ),
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              toolbarHeight: isDesktop ? 76 : 64,
+              titleSpacing: isDesktop && !showBackButton
+                  ? AppTheme.space24
+                  : null,
+              leading: showBackButton
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back, size: 20),
+                      tooltip: MaterialLocalizations.of(context)
+                          .backButtonTooltip,
+                      onPressed: onBack ?? () => Navigator.of(context).pop(),
+                    )
+                  : (isDesktop
+                        ? null
+                        : Builder(
+                            builder: (context) => IconButton(
+                              icon: const Icon(Icons.menu_rounded),
+                              tooltip: 'Open navigation menu',
+                              onPressed: () =>
+                                  Scaffold.of(context).openDrawer(),
+                            ),
+                          )),
+              title: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textDark,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              actions: [
+                if (!compactActions && primaryAction != null) ...[
+                  primaryAction!,
+                  const SizedBox(width: AppTheme.space16),
+                ],
+                _buildUserAccountMenu(context, showName: isDesktop),
+                const SizedBox(width: AppTheme.space16),
+              ],
+              bottom: compactActions
+                  ? PreferredSize(
+                      preferredSize: const Size.fromHeight(52),
+                      child: SizedBox(
+                        height: 52,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: primaryAction,
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            body: child,
           ),
         ),
-        actions: [
-          if (isDesktop) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppTheme.statusActiveBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.statusActiveBorder),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  PulsingBeacon(color: AppTheme.statusActiveText, size: 5),
-                  SizedBox(width: 6),
-                  Text(
-                    'Live Fleet Sync',
-                    style: TextStyle(
-                      color: AppTheme.statusActiveText,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppTheme.space12),
-          ],
-          if (primaryAction != null) ...[
-            primaryAction!,
-            const SizedBox(width: AppTheme.space12),
-          ],
-          _buildUserAccountMenu(context),
-          const SizedBox(width: AppTheme.space16),
-        ],
-      ),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (isDesktop) _buildDesktopSidebar(context),
-          Expanded(child: child),
-        ],
-      ),
+      ],
     );
   }
 
-  Widget _buildDesktopSidebar(BuildContext context) {
-    return Container(
-      width: 256,
+  Widget _buildNavigation(BuildContext context, {bool isDrawer = false}) {
+    final currentPath = Uri.tryParse(
+      ModalRoute.of(context)?.settings.name ?? '',
+    )?.path;
+    const destinations = [
+      (
+        label: 'Dashboard',
+        pageTitle: 'Fleet Dashboard',
+        icon: Icons.dashboard_outlined,
+        route: AppRouter.dashboardRoute,
+      ),
+      (
+        label: 'Vehicles',
+        pageTitle: 'Vehicles',
+        icon: Icons.directions_car_outlined,
+        route: AppRouter.vehiclesRoute,
+      ),
+      (
+        label: 'Drivers',
+        pageTitle: 'Drivers',
+        icon: Icons.badge_outlined,
+        route: AppRouter.driversRoute,
+      ),
+      (
+        label: 'Documents',
+        pageTitle: 'Fleet Documents',
+        icon: Icons.folder_outlined,
+        route: AppRouter.documentsRoute,
+      ),
+      (
+        label: 'Maintenance',
+        pageTitle: 'Fleet Maintenance',
+        icon: Icons.build_outlined,
+        route: AppRouter.maintenanceRoute,
+      ),
+    ];
+
+    return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: AppTheme.darkSidebarGradient,
-        border: Border(
-          right: BorderSide(color: AppTheme.navy800, width: 1),
-        ),
+        border: Border(right: BorderSide(color: AppTheme.navy800)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildSidebarBrand(),
-          const Divider(color: AppTheme.navy800, height: 1),
-          const SizedBox(height: AppTheme.space16),
-          _buildSidebarItem(
-            icon: Icons.dashboard_rounded,
-            label: 'Dashboard',
-            isActive: title == 'Fleet Dashboard',
-            onTap: () {
-              if (title != 'Fleet Dashboard') {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRouter.dashboardRoute,
-                  (route) => false,
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 6),
-          _buildSidebarItem(
-            icon: Icons.directions_car_filled_rounded,
-            label: 'Vehicles',
-            isActive: title == 'Vehicles' || (title.contains('Vehicle') && !title.contains('Document') && !title.contains('Maintenance')),
-            onTap: () {
-              if (title != 'Vehicles') {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRouter.vehiclesRoute,
-                  (route) => false,
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 6),
-          _buildSidebarItem(
-            icon: Icons.folder_shared_rounded,
-            label: 'Documents',
-            isActive: title == 'Fleet Documents' || title.contains('Document'),
-            onTap: () {
-              if (title != 'Fleet Documents') {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRouter.documentsRoute,
-                  (route) => false,
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 6),
-          _buildSidebarItem(
-            icon: Icons.build_circle_rounded,
-            label: 'Maintenance',
-            isActive: title == 'Fleet Maintenance' || title.contains('Maintenance'),
-            onTap: () {
-              if (title != 'Fleet Maintenance') {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRouter.maintenanceRoute,
-                  (route) => false,
-                );
-              }
-            },
-          ),
-          const SizedBox(height: 6),
-          _buildSidebarItem(
-            icon: Icons.badge_rounded,
-            label: 'Drivers',
-            isActive: title == 'Drivers' || title.contains('Driver'),
-            onTap: () {
-              if (title != 'Drivers') {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRouter.driversRoute,
-                  (route) => false,
-                );
-              }
-            },
-          ),
-          const Spacer(),
-          const Divider(color: AppTheme.navy800, height: 1),
-          _buildSidebarFooter(context),
-        ],
+      child: SafeArea(
+        right: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSidebarBrand(),
+            const Divider(color: AppTheme.navy800, height: 1),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.only(top: 24, bottom: 12),
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(24, 0, 16, 12),
+                    child: Text(
+                      'FLEET WORKSPACE',
+                      style: TextStyle(
+                        color: AppTheme.onNavyLabel,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.6,
+                      ),
+                    ),
+                  ),
+                  for (final destination in destinations)
+                    _buildSidebarItem(
+                      icon: destination.icon,
+                      label: destination.label,
+                      isActive:
+                          title == destination.pageTitle ||
+                          currentPath == destination.route ||
+                          (currentPath?.startsWith('${destination.route}/') ??
+                              false),
+                      onTap: () {
+                        final navigator = Navigator.of(context);
+                        if (isDrawer) navigator.pop();
+                        if (title != destination.pageTitle) {
+                          navigator.pushNamedAndRemoveUntil(
+                            destination.route,
+                            (route) => false,
+                          );
+                        }
+                      },
+                    ),
+                ],
+              ),
+            ),
+            const Divider(color: AppTheme.navy800, height: 1),
+            _buildSidebarFooter(context),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSidebarBrand() {
     return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppTheme.space16, vertical: AppTheme.space20),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.space16,
+        vertical: AppTheme.space20,
+      ),
       child: StarkLogo.dark(
         size: StarkLogoSize.medium,
         title: 'STARK GROUP',
@@ -239,62 +253,46 @@ class AppShell extends StatelessWidget {
     required bool isActive,
     required VoidCallback onTap,
   }) {
+    final foreground = isActive ? Colors.white : AppTheme.onNavyMuted;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.space12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        decoration: BoxDecoration(
-          gradient: isActive ? AppTheme.brandGradient : null,
-          color: isActive ? null : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.35),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      child: Semantics(
+        selected: isActive,
         child: Material(
-          color: Colors.transparent,
+          color: isActive ? AppTheme.primaryBlue : Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           child: InkWell(
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            hoverColor: Colors.white.withValues(alpha: 0.05),
+            hoverColor: Colors.white.withValues(alpha: 0.09),
+            focusColor: Colors.white.withValues(alpha: 0.16),
             onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.space16,
+                horizontal: AppTheme.space12,
                 vertical: AppTheme.space12,
               ),
               child: Row(
                 children: [
-                  Icon(
-                    icon,
-                    size: 20,
-                    color: isActive ? Colors.white : AppTheme.textDisabled,
-                  ),
+                  Icon(icon, size: 20, color: foreground),
                   const SizedBox(width: AppTheme.space12),
                   Expanded(
                     child: Text(
                       label,
                       style: TextStyle(
-                        color: isActive ? Colors.white : AppTheme.borderNeutral,
+                        color: foreground,
                         fontSize: 14,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                       ),
                     ),
                   ),
                   if (isActive)
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 17,
+                      color: Colors.white,
                     ),
                 ],
               ),
@@ -306,7 +304,8 @@ class AppShell extends StatelessWidget {
   }
 
   Widget _buildSidebarFooter(BuildContext context) {
-    final email = AuthService.instance.currentEmail ?? 'operator@starkgroup.com';
+    final email =
+        AuthService.instance.currentEmail ?? 'operator@starkgroup.com';
     final initials = _getUserInitials(email);
     final displayName = _getUserDisplayName(email);
 
@@ -314,31 +313,7 @@ class AppShell extends StatelessWidget {
       padding: const EdgeInsets.all(AppTheme.space16),
       child: Row(
         children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: AppTheme.primaryBlue,
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const Positioned(
-                bottom: -2,
-                right: -2,
-                child: PulsingBeacon(
-                  color: Color(0xFF10B981),
-                  size: 4,
-                ),
-              ),
-            ],
-          ),
+          _buildAvatar(initials),
           const SizedBox(width: AppTheme.space12),
           Expanded(
             child: Column(
@@ -357,7 +332,7 @@ class AppShell extends StatelessWidget {
                 Text(
                   email,
                   style: const TextStyle(
-                    color: AppTheme.textDisabled,
+                    color: AppTheme.onNavyMuted,
                     fontSize: 11,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -367,7 +342,7 @@ class AppShell extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, size: 18),
-            color: AppTheme.textDisabled,
+            color: AppTheme.onNavyMuted,
             tooltip: 'Sign out',
             onPressed: () => _handleSignOut(context),
           ),
@@ -376,101 +351,24 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      backgroundColor: AppTheme.navy900,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSidebarBrand(),
-            const Divider(color: AppTheme.navy800, height: 1),
-            const SizedBox(height: AppTheme.space16),
-            _buildSidebarItem(
-              icon: Icons.dashboard_rounded,
-              label: 'Dashboard',
-              isActive: title == 'Fleet Dashboard',
-              onTap: () {
-                Navigator.of(context).pop();
-                if (title != 'Fleet Dashboard') {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    AppRouter.dashboardRoute,
-                    (route) => false,
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 4),
-            _buildSidebarItem(
-              icon: Icons.directions_car_filled_rounded,
-              label: 'Vehicles',
-              isActive: title == 'Vehicles' || (title.contains('Vehicle') && !title.contains('Document') && !title.contains('Maintenance')),
-              onTap: () {
-                Navigator.of(context).pop();
-                if (title != 'Vehicles') {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    AppRouter.vehiclesRoute,
-                    (route) => false,
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 4),
-            _buildSidebarItem(
-              icon: Icons.folder_shared_rounded,
-              label: 'Documents',
-              isActive: title == 'Fleet Documents' || title.contains('Document'),
-              onTap: () {
-                Navigator.of(context).pop();
-                if (title != 'Fleet Documents') {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    AppRouter.documentsRoute,
-                    (route) => false,
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 4),
-            _buildSidebarItem(
-              icon: Icons.build_circle_rounded,
-              label: 'Maintenance',
-              isActive: title == 'Fleet Maintenance' || title.contains('Maintenance'),
-              onTap: () {
-                Navigator.of(context).pop();
-                if (title != 'Fleet Maintenance') {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    AppRouter.maintenanceRoute,
-                    (route) => false,
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 4),
-            _buildSidebarItem(
-              icon: Icons.badge_rounded,
-              label: 'Drivers',
-              isActive: title == 'Drivers' || title.contains('Driver'),
-              onTap: () {
-                Navigator.of(context).pop();
-                if (title != 'Drivers') {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    AppRouter.driversRoute,
-                    (route) => false,
-                  );
-                }
-              },
-            ),
-            const Spacer(),
-            const Divider(color: AppTheme.navy800, height: 1),
-            _buildSidebarFooter(context),
-          ],
+  Widget _buildAvatar(String initials) {
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: AppTheme.primaryBlue,
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 
-  Widget _buildUserAccountMenu(BuildContext context) {
-    final email = AuthService.instance.currentEmail ?? 'operator@starkgroup.com';
+  Widget _buildUserAccountMenu(BuildContext context, {required bool showName}) {
+    final email =
+        AuthService.instance.currentEmail ?? 'operator@starkgroup.com';
     final initials = _getUserInitials(email);
     final displayName = _getUserDisplayName(email);
 
@@ -481,38 +379,41 @@ class AppShell extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         side: const BorderSide(color: AppTheme.borderNeutral),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: AppTheme.primaryBlue,
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppTheme.primaryBlueSubtle,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildAvatar(initials),
+            if (showName) ...[
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 136),
                 child: Text(
-                  initials,
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                  displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppTheme.textDark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              const Positioned(
-                bottom: -1,
-                right: -1,
-                child: PulsingBeacon(
-                  color: Color(0xFF10B981),
-                  size: 3.5,
-                ),
+              const Icon(
+                Icons.expand_more,
+                size: 18,
+                color: AppTheme.textMuted,
               ),
             ],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            displayName,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(width: 4),
-          const Icon(Icons.arrow_drop_down, size: 18, color: AppTheme.textMuted),
-        ],
+          ],
+        ),
       ),
       itemBuilder: (ctx) => [
         PopupMenuItem<String>(
@@ -522,7 +423,11 @@ class AppShell extends StatelessWidget {
             children: [
               Text(
                 displayName,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textDark,
+                ),
               ),
               Text(
                 email,

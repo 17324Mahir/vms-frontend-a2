@@ -1,6 +1,6 @@
 # Stark Group VMS - Frontend (Assignment 2 Fleet Management)
 
-Frontend application for the **Stark Group Vehicle Management System (VMS)**, built with **Flutter Web** (Material 3) and connected to the Spring Boot REST API.
+Frontend application for the **Stark Group Vehicle Management System (VMS)**, with a **Next.js** public landing page and a **Flutter Web** workspace connected to the Spring Boot REST API.
 
 ---
 
@@ -23,6 +23,7 @@ Frontend application for the **Stark Group Vehicle Management System (VMS)**, bu
 
 - **Flutter SDK:** `3.47.5` (channel: `stable`)
 - **Dart SDK:** `^3.13.4`
+- **Node.js:** `24` for the landing page build
 - **Supported Browser:** Google Chrome, Chromium, Firefox, Edge, or Safari
 
 Verify your Flutter installation:
@@ -58,7 +59,7 @@ The application reads the target backend origin at compile time via `String.from
 - **Development:** Default is `http://localhost:8080`.
 - **Production:** Provide your public HTTPS backend origin:
   ```bash
-  flutter build web --release --no-tree-shake-icons --dart-define=API_BASE_URL=https://api.vms.example.com
+  API_BASE_URL=https://vms-backend-a2.onrender.com ./scripts/build_web.sh
   ```
 - **Backend CORS:** The backend must include your frontend origin in its `CORS_ALLOWED_ORIGINS` configuration (e.g. `http://localhost:5173` or `https://<site>.netlify.app`).
 
@@ -78,9 +79,9 @@ flutter test
 
 ### Build Production Web Release Bundle
 ```bash
-flutter build web --release --no-tree-shake-icons
+API_BASE_URL=https://vms-backend-a2.onrender.com ./scripts/build_web.sh
 ```
-Output directory: `build/web/`
+Publish `build/web/`. The landing page is served at `/` and the Flutter workspace at `/workspace.html`. GitHub Actions and Netlify use this same build script.
 
 ---
 

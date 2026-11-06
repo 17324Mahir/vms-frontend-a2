@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
+
 import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/auth/auth_service.dart';
 import '../../router/app_router.dart';
-import '../../widgets/animated/ambient_grid_pattern.dart';
-import '../../widgets/animated/border_beam.dart';
+import '../../widgets/auth_layout.dart';
 import '../../widgets/brand/stark_logo.dart';
 
-enum _ResetStep {
-  requestOtp,
-  verifyOtpAndReset,
-  success,
-}
+enum _ResetStep { requestOtp, verifyOtpAndReset, success }
 
 /// Screen allowing registered users to verify their account via email OTP
 /// and reset their account password.
@@ -68,6 +64,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _handleRequestOtp() async {
+    if (_isSubmitting) return;
     setState(() {
       _errorMessage = null;
       _infoNotice = null;
@@ -119,6 +116,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Future<void> _handleVerifyAndReset() async {
+    if (_isSubmitting) return;
     setState(() {
       _errorMessage = null;
     });
@@ -127,8 +125,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-    final newPass = _passwordController.text.trim();
-    final confirmPass = _confirmPasswordController.text.trim();
+    final newPass = _passwordController.text;
+    final confirmPass = _confirmPasswordController.text;
 
     if (newPass != confirmPass) {
       setState(() => _errorMessage = 'Passwords do not match.');
@@ -172,7 +170,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       if (mounted) {
         setState(() {
           _isSubmitting = false;
-          _errorMessage = 'An unexpected error occurred while resetting password.';
+          _errorMessage =
+              'An unexpected error occurred while resetting password.';
         });
       }
     }
@@ -180,79 +179,38 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.brandObsidian,
-      body: Stack(
+    return AuthLayout(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(gradient: AppTheme.authBackdrop),
-              child: AmbientGridPattern(
-                spacing: 28,
-                dotRadius: 1.0,
-                dotColor: AppTheme.navy800,
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppTheme.space24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 460),
-                  child: BorderBeam(
-                    borderRadius: AppTheme.radiusLg,
-                    beamColor: AppTheme.accentBlue,
-                    accentColor: AppTheme.primaryBlue,
-                    child: Card(
-                      color: AppTheme.surfaceWhite,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                        side: const BorderSide(color: AppTheme.borderNeutral),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(
-                          MediaQuery.sizeOf(context).width < 400
-                              ? AppTheme.space20
-                              : AppTheme.space32,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildBrandHeader(),
-                            const SizedBox(height: AppTheme.space20),
-                            const Divider(height: 1),
-                            const SizedBox(height: AppTheme.space20),
+          _buildBrandHeader(),
+          const SizedBox(height: AppTheme.space20),
+          const Divider(height: 1),
+          const SizedBox(height: AppTheme.space20),
 
-                            // Step 1: Request OTP by Email
-                            if (_currentStep == _ResetStep.requestOtp) ...[
-                              _buildRequestOtpStep(),
-                            ] else if (_currentStep == _ResetStep.verifyOtpAndReset) ...[
-                              _buildVerifyOtpStep(),
-                            ] else if (_currentStep == _ResetStep.success) ...[
-                              _buildSuccessStep(),
-                            ],
+          // Step 1: Request OTP by Email
+          if (_currentStep == _ResetStep.requestOtp) ...[
+            _buildRequestOtpStep(),
+          ] else if (_currentStep == _ResetStep.verifyOtpAndReset) ...[
+            _buildVerifyOtpStep(),
+          ] else if (_currentStep == _ResetStep.success) ...[
+            _buildSuccessStep(),
+          ],
 
-                            const SizedBox(height: AppTheme.space16),
+          const SizedBox(height: AppTheme.space16),
 
-                            // Back to Sign In Link
-                            Center(
-                              child: TextButton.icon(
-                                onPressed: () {
-                                  Navigator.of(context).pushReplacementNamed(AppRouter.loginRoute);
-                                },
-                                icon: const Icon(Icons.arrow_back, size: 14),
-                                label: const Text('Back to Sign In', style: TextStyle(fontSize: 13)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+          // Back to Sign In Link
+          Center(
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.of(context)
+                    .pushReplacementNamed(AppRouter.loginRoute);
+              },
+              icon: const Icon(Icons.arrow_back, size: 14),
+              label: const Text(
+                'Back to Sign In',
+                style: TextStyle(fontSize: 13),
               ),
             ),
           ),
@@ -262,10 +220,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Widget _buildBrandHeader() {
-    return const StarkLogo.light(
-      size: StarkLogoSize.medium,
-      showBadge: true,
-    );
+    return const StarkLogo.light(size: StarkLogoSize.medium, showBadge: true);
   }
 
   Widget _buildSecurityAdvisory() {
@@ -308,7 +263,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline_rounded, size: 18, color: AppTheme.errorRed),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 18,
+            color: AppTheme.errorRed,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -342,7 +301,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           const SizedBox(height: AppTheme.space4),
           const Text(
             'Enter your registered email address to verify your account and receive a 6-digit verification code.',
-            style: TextStyle(fontSize: 13, color: AppTheme.textMuted, height: 1.4),
+            style: TextStyle(
+              fontSize: 13,
+              color: AppTheme.textMuted,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: AppTheme.space16),
 
@@ -378,9 +341,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
             validator: (value) {
               final trimmed = value?.trim() ?? '';
-              if (trimmed.isEmpty) return 'Please enter your registered email address.';
+              if (trimmed.isEmpty) {
+                return 'Please enter your registered email address.';
+              }
               final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-              if (!emailRegex.hasMatch(trimmed)) return 'Please enter a valid email address.';
+              if (!emailRegex.hasMatch(trimmed)) {
+                return 'Please enter a valid email address.';
+              }
               return null;
             },
           ),
@@ -403,7 +370,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Text('Send Verification Code', style: TextStyle(fontWeight: FontWeight.w600)),
+                : const Text(
+                    'Send Verification Code',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
           ),
           const SizedBox(height: AppTheme.space16),
 
@@ -413,7 +383,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               _emailController.text = 'test@starkgroup.test';
             },
             icon: const Icon(Icons.flash_on_rounded, size: 16),
-            label: const Text('Pre-fill Demo Account (test@starkgroup.test)', style: TextStyle(fontSize: 12)),
+            label: const Text(
+              'Pre-fill Demo Account (test@starkgroup.test)',
+              style: TextStyle(fontSize: 12),
+            ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 8),
               side: const BorderSide(color: AppTheme.borderNeutral),
@@ -461,7 +434,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             _emailSent
                 ? 'A 6-digit verification code was sent to your inbox: ${_accountEmail ?? _emailController.text.trim()}.'
                 : 'A 6-digit verification code was generated for ${_accountEmail ?? _emailController.text.trim()}.',
-            style: const TextStyle(fontSize: 13, color: AppTheme.textMuted, height: 1.4),
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppTheme.textMuted,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: AppTheme.space16),
 
@@ -479,12 +456,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.mark_email_read_outlined, size: 18, color: AppTheme.primaryBlue),
+                      const Icon(
+                        Icons.mark_email_read_outlined,
+                        size: 18,
+                        color: AppTheme.primaryBlue,
+                      ),
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
                           'Demo Environment OTP Code:',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryBlue,
+                          ),
                         ),
                       ),
                       InkWell(
@@ -494,14 +479,23 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           });
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: AppTheme.primaryBlue,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.radiusSm,
+                            ),
                           ),
                           child: const Text(
                             'Auto-Fill Code',
-                            style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -531,7 +525,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           // OTP Code Field
           const Text(
             '6-Digit Verification Code',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textDark),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textDark,
+            ),
           ),
           const SizedBox(height: AppTheme.space4),
           TextFormField(
@@ -542,7 +540,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             maxLength: 6,
             textInputAction: TextInputAction.next,
             onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 3),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 3,
+            ),
             decoration: const InputDecoration(
               counterText: '',
               hintText: '123456',
@@ -550,8 +552,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
             validator: (value) {
               final trimmed = value?.trim() ?? '';
-              if (trimmed.isEmpty) return 'Please enter the 6-digit verification code.';
-              if (trimmed.length != 6) return 'Verification code must be exactly 6 digits.';
+              if (trimmed.isEmpty) {
+                return 'Please enter the 6-digit verification code.';
+              }
+              if (trimmed.length != 6) {
+                return 'Verification code must be exactly 6 digits.';
+              }
               return null;
             },
           ),
@@ -560,7 +566,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           // New Password Field
           const Text(
             'New Password',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textDark),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textDark,
+            ),
           ),
           const SizedBox(height: AppTheme.space4),
           TextFormField(
@@ -578,17 +588,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               prefixIcon: const Icon(Icons.lock_outline, size: 18),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   size: 20,
                   color: AppTheme.textMuted,
                 ),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
             ),
             validator: (value) {
               final trimmed = value?.trim() ?? '';
               if (trimmed.isEmpty) return 'Please enter a new password.';
-              if (trimmed.length < 6) return 'Password must be at least 6 characters.';
+              if (value != trimmed) {
+                return 'Remove spaces at the start or end of the password.';
+              }
+              if (trimmed.length < 6) {
+                return 'Password must be at least 6 characters.';
+              }
               return null;
             },
           ),
@@ -597,7 +615,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           // Confirm Password Field
           const Text(
             'Confirm New Password',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textDark),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textDark,
+            ),
           ),
           const SizedBox(height: AppTheme.space4),
           TextFormField(
@@ -615,17 +637,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               prefixIcon: const Icon(Icons.lock_outline, size: 18),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscureConfirm
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   size: 20,
                   color: AppTheme.textMuted,
                 ),
-                onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                onPressed: () =>
+                    setState(() => _obscureConfirm = !_obscureConfirm),
               ),
             ),
             validator: (value) {
               final trimmed = value?.trim() ?? '';
               if (trimmed.isEmpty) return 'Please confirm your new password.';
-              if (trimmed != _passwordController.text.trim()) {
+              if (trimmed != _passwordController.text) {
                 return 'Passwords do not match.';
               }
               return null;
@@ -650,7 +675,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Text('Verify Code & Update Password', style: TextStyle(fontWeight: FontWeight.w600)),
+                : const Text(
+                    'Verify Code & Update Password',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
           ),
           const SizedBox(height: AppTheme.space12),
 
@@ -661,7 +689,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               _confirmPasswordController.text = 'Password123!';
             },
             icon: const Icon(Icons.flash_on_rounded, size: 16),
-            label: const Text('Fill Test Password (Password123!)', style: TextStyle(fontSize: 12)),
+            label: const Text(
+              'Fill Test Password (Password123!)',
+              style: TextStyle(fontSize: 12),
+            ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 8),
               side: const BorderSide(color: AppTheme.borderNeutral),
@@ -685,7 +716,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
           child: Column(
             children: [
-              const Icon(Icons.check_circle_rounded, size: 40, color: Color(0xFF059669)),
+              const Icon(
+                Icons.check_circle_rounded,
+                size: 40,
+                color: Color(0xFF059669),
+              ),
               const SizedBox(height: AppTheme.space12),
               const Text(
                 'Password Successfully Updated!',

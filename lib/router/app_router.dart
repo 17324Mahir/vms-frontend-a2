@@ -13,7 +13,6 @@ import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/documents/document_list_screen.dart';
 import '../screens/drivers/driver_form_screen.dart';
 import '../screens/drivers/driver_list_screen.dart';
-import '../screens/home/home_screen.dart';
 import '../screens/maintenance/maintenance_list_screen.dart';
 import '../screens/vehicles/vehicle_details_screen.dart';
 import '../screens/vehicles/vehicle_form_screen.dart';
@@ -91,11 +90,7 @@ class AppRouter {
 
     switch (uri?.path) {
       case homeRoute:
-        if (isWebWorkspace) return _workspaceStart();
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const HomeScreen(),
-        );
+        return _workspaceStart();
 
       case loginRoute:
         return MaterialPageRoute(
@@ -238,11 +233,7 @@ class AppRouter {
         );
 
       default:
-        if (isWebWorkspace) return _workspaceStart();
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const HomeScreen(),
-        );
+        return _workspaceStart();
     }
   }
 }

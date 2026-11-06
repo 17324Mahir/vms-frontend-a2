@@ -26,10 +26,12 @@ const benefits = [
   { icon: Activity, title: "Coordinate daily operations" },
 ];
 
-const plans = [
-  { name: "Starter", price: "19", note: "For small teams getting organized.", items: ["Vehicle and driver registry", "Document management", "Service history"] },
-  { name: "Operations", price: "49", note: "For teams coordinating a growing fleet.", items: ["Everything in Starter", "Vehicle and driver assignments", "Renewal alerts and cost summaries"], featured: true },
-  { name: "Enterprise", price: "99", note: "For larger fleet operations.", items: ["Everything in Operations", "Fleet overview and reporting", "Multi-team rollout planning"] },
+const freeFeatures = [
+  "Search, filter and sort your vehicle registry",
+  "Manage drivers and vehicle assignments",
+  "Upload documents and track renewals",
+  "Log services, costs and maintenance history",
+  "See fleet status and costs on the dashboard",
 ];
 
 function Brand() {
@@ -73,9 +75,9 @@ export default function Home() {
   return <>
     <a className="skip-link" href="#main">Skip to content</a>
     <header className="site-header"><div className="wrap nav"><Brand />
-      <nav className="nav-links" aria-label="Main navigation"><a href="#features">Features</a><a href="#solutions">Solutions</a><a href="#pricing">Pricing</a><a href="#contact">Contact</a></nav>
-      <div className="nav-actions"><a className="login" href={login}>Login</a><a className="button button-blue" href={register}>Get started <ArrowUpRight size={15} /></a></div>
-      <details className="mobile-menu"><summary aria-label="Navigation menu"><Menu size={23}/></summary><nav aria-label="Mobile navigation"><a href="#features">Features</a><a href="#solutions">Solutions</a><a href="#pricing">Pricing</a><a href="#contact">Contact</a><a href={login}>Login</a></nav></details>
+      <nav className="nav-links" aria-label="Main navigation"><a href="#features">Features</a><a href="#solutions">Solutions</a><a href="#pricing">Free plan</a></nav>
+      <div className="nav-actions"><a className="login" href={login}>Login</a><a className="button button-blue" href={register}>Start free <ArrowUpRight size={15} /></a></div>
+      <details className="mobile-menu"><summary aria-label="Navigation menu"><Menu size={23}/></summary><nav aria-label="Mobile navigation"><a href="#features">Features</a><a href="#solutions">Solutions</a><a href="#pricing">Free plan</a><a href={login}>Login</a></nav></details>
     </div></header>
     <MotionEffects />
     <main id="main">
@@ -86,7 +88,7 @@ export default function Home() {
             <p className="hero-kicker"><i /> VEHICLE MANAGEMENT SYSTEM</p>
             <h1 id="hero-title">Smarter Vehicle<br className="desktop-break"/> Management <em>Starts Here.</em></h1>
             <p className="hero-description">Manage vehicles, drivers and service records from one workspace. See what’s moving, what’s due and what needs your attention.</p>
-            <div className="hero-actions"><a href={register} className="button button-blue">Get started <ArrowUpRight size={18}/></a><a href="#solutions" className="button button-outline">Explore platform <ArrowDown size={16}/></a></div>
+            <div className="hero-actions"><a href={register} className="button button-blue">Start free <ArrowUpRight size={18}/></a><a href="#solutions" className="button button-outline">Explore platform <ArrowDown size={16}/></a></div>
           </div>
           <div className="hero-art">
             <div className="telemetry telemetry-top"><div className="telemetry-icon"><Activity size={17}/></div><div><span>SAMPLE VEHICLE STATUS</span><strong><i /> Operational</strong></div></div>
@@ -118,13 +120,23 @@ export default function Home() {
       <section className="benefits section"><div className="wrap benefits-inner" data-reveal><div><SectionLabel number="04">FLEET BENEFITS</SectionLabel><h2>More time on the road.</h2><p>Give your team a shared view of what’s happening across the fleet and what comes next.</p></div>
       <div className="benefit-list">{benefits.map(({icon: Icon,title})=><div key={title}><Icon size={22}/><strong>{title}</strong></div>)}</div></div></section>
 
-      <section id="pricing" className="section wrap">
-        <div className="section-intro" data-reveal><SectionLabel number="05">PRICING CONCEPT</SectionLabel><h2>Room for every fleet.</h2><p>Illustrative plans and sample prices. The Assignment 2 workspace opens without a billing step.</p></div>
-        <div className="pricing-grid">{plans.map(({name,price,note,items,featured})=><article data-reveal key={name} className={`plan ${featured ? "plan-featured" : ""}`}><span className="plan-label">{featured ? "FEATURED CONCEPT" : "ILLUSTRATIVE PLAN"}</span><h3>{name}</h3><p>{note}</p><div className="price">{"$"}{price}<small> / month</small></div><ul>{items.map(item=><li key={item}><Check size={16}/>{item}</li>)}</ul><a href={register} className={`button ${featured ? "button-blue" : "button-light"}`}>Try the workspace <ArrowUpRight size={16}/></a></article>)}</div>
+      <section id="pricing" className="section wrap free-section">
+        <div className="section-intro" data-reveal>
+          <SectionLabel number="05">FREE PLAN</SectionLabel>
+          <h2>Run your fleet for free.</h2>
+          <p>Create your own workspace and manage vehicles, drivers and service records without a subscription.</p>
+        </div>
+        <article className="plan plan-featured free-plan" data-reveal>
+          <span className="plan-label">STARK FLEET</span>
+          <h3>Free workspace</h3>
+          <div className="price">$0<small> / month</small></div>
+          <ul>{freeFeatures.map(item => <li key={item}><Check size={16}/>{item}</li>)}</ul>
+          <a href={register} className="button button-blue">Create a free account <ArrowUpRight size={16}/></a>
+        </article>
       </section>
 
       <section id="contact" className="final-cta"><div className="wrap final-inner" data-reveal><SectionLabel number="06">START HERE</SectionLabel><h2>Get your fleet in gear.</h2><p>Set up your workspace and bring your vehicles, drivers and service records together.</p><div className="hero-actions"><a className="button button-blue" href={register}>Create an account <ArrowUpRight size={17}/></a><a className="button button-outline" href={workspace}>Open workspace <ArrowRight size={17}/></a></div></div></section>
     </main>
-    <footer className="wrap footer"><Brand /><nav aria-label="Footer navigation"><a href="#features">Features</a><a href="#solutions">Solutions</a><a href="#pricing">Pricing</a><a href={login}>Login</a></nav><span>© {new Date().getFullYear()} Stark Group</span></footer>
+    <footer className="wrap footer"><Brand /><nav aria-label="Footer navigation"><a href="#features">Features</a><a href="#solutions">Solutions</a><a href="#pricing">Free plan</a><a href={login}>Login</a></nav><span>© {new Date().getFullYear()} Stark Group</span></footer>
   </>;
 }

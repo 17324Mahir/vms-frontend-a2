@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
@@ -9,6 +10,7 @@ import '../../models/driver.dart';
 import '../../models/vehicle.dart';
 import '../../router/app_router.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/workspace_section_header.dart';
 import '../../widgets/confirmation_dialog.dart';
 
 /// Reusable form screen for both Registering a new vehicle and Editing an existing vehicle.
@@ -16,11 +18,7 @@ class VehicleFormScreen extends StatefulWidget {
   final Vehicle? vehicleToEdit;
   final int? vehicleId;
 
-  const VehicleFormScreen({
-    super.key,
-    this.vehicleToEdit,
-    this.vehicleId,
-  });
+  const VehicleFormScreen({super.key, this.vehicleToEdit, this.vehicleId});
 
   bool get isEditing => vehicleToEdit != null || vehicleId != null;
 
@@ -67,9 +65,12 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
     _brandController = TextEditingController();
     _modelController = TextEditingController();
 
-    DriverRepository.instance.getAvailableDrivers().then((drivers) {
-      if (mounted) setState(() => _availableDrivers = drivers);
-    }).catchError((_) {});
+    DriverRepository.instance
+        .getAvailableDrivers()
+        .then((drivers) {
+          if (mounted) setState(() => _availableDrivers = drivers);
+        })
+        .catchError((_) {});
 
     if (widget.vehicleToEdit != null) {
       _initFromVehicle(widget.vehicleToEdit!);
@@ -236,7 +237,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
     try {
       final Vehicle result;
       if (widget.isEditing && activeId != null && activeId > 0) {
-        result = await repo.update(vehicle, assignedDriverId: _selectedDriverId);
+        result = await repo.update(
+          vehicle,
+          assignedDriverId: _selectedDriverId,
+        );
       } else {
         result = await repo.add(vehicle, assignedDriverId: _selectedDriverId);
       }
@@ -262,7 +266,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         if (e.isDuplicateVehicleNumber) {
           _serverFieldErrors['vehicleNumber'] =
               e.getFieldError('vehicleNumber') ??
-                  'A vehicle with this Vehicle Number already exists.';
+              'A vehicle with this Vehicle Number already exists.';
           _numberFocusNode.requestFocus();
         } else if (e.isValidationFailed && e.fieldErrors.isNotEmpty) {
           for (final fe in e.fieldErrors) {
@@ -281,9 +285,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
       if (e.isNotFound) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Vehicle record is no longer available.',
-            ),
+            content: Text('Vehicle record is no longer available.'),
             backgroundColor: AppTheme.errorRed,
             behavior: SnackBarBehavior.floating,
             action: SnackBarAction(
@@ -443,7 +445,9 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         showBackButton: true,
         onBack: _handleCancel,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppTheme.space24),
+          padding: EdgeInsets.all(
+            isDesktop ? AppTheme.space24 : AppTheme.space16,
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 860),
@@ -472,25 +476,12 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
   }
 
   Widget _buildFormHeader(String title) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textDark,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          widget.isEditing
-              ? 'Update vehicle details and status.'
-              : 'Add a new vehicle to the fleet registry.',
-          style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
-        ),
-      ],
+    return WorkspaceSectionHeader(
+      label: 'FLEET REGISTRY',
+      title: title,
+      description: widget.isEditing
+          ? 'Update registration details, operational status and driver assignment.'
+          : 'Add a vehicle to your fleet with its registration and assignment details.',
     );
   }
 
@@ -501,8 +492,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Vehicle Identity',
-                'Registration number and company'),
+            _buildSectionTitle(
+              'Vehicle Identity',
+              'Registration number and company',
+            ),
             const SizedBox(height: AppTheme.space16),
             if (isDesktop)
               Row(
@@ -531,8 +524,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Vehicle Details',
-                'Type, brand, and model'),
+            _buildSectionTitle('Vehicle Details', 'Type, brand, and model'),
             const SizedBox(height: AppTheme.space16),
             if (isDesktop)
               Row(
@@ -565,8 +557,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Fleet Status & Driver',
-                'Current deployment status and assigned driver'),
+            _buildSectionTitle(
+              'Fleet Status & Driver',
+              'Current deployment status and assigned driver',
+            ),
             const SizedBox(height: AppTheme.space16),
             Wrap(
               spacing: AppTheme.space24,
@@ -596,9 +590,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         const Text(
           'Assigned Driver',
           style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textDark),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
+          ),
         ),
         const SizedBox(height: AppTheme.space4),
         DropdownButtonFormField<int?>(
@@ -611,7 +606,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
           items: [
             const DropdownMenuItem<int?>(
               value: null,
-              child: Text('Unassigned (No Driver)', style: TextStyle(fontStyle: FontStyle.italic)),
+              child: Text(
+                'Unassigned (No Driver)',
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
             ),
             if (currentDriver != null)
               DropdownMenuItem<int?>(
@@ -667,9 +665,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         const Text(
           'Vehicle Number *',
           style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textDark),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
+          ),
         ),
         const SizedBox(height: AppTheme.space4),
         TextFormField(
@@ -713,17 +712,16 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         const Text(
           'Company *',
           style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textDark),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
+          ),
         ),
         const SizedBox(height: AppTheme.space4),
         DropdownButtonFormField<String>(
           initialValue: _selectedCompany,
           isExpanded: true,
-          decoration: InputDecoration(
-            errorText: _serverFieldErrors['company'],
-          ),
+          decoration: InputDecoration(errorText: _serverFieldErrors['company']),
           items: availableCompanies.map((c) {
             return DropdownMenuItem(
               value: c,
@@ -765,17 +763,16 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         const Text(
           'Type *',
           style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textDark),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
+          ),
         ),
         const SizedBox(height: AppTheme.space4),
         DropdownButtonFormField<String>(
           initialValue: _selectedType,
           isExpanded: true,
-          decoration: InputDecoration(
-            errorText: _serverFieldErrors['type'],
-          ),
+          decoration: InputDecoration(errorText: _serverFieldErrors['type']),
           items: availableTypes.map((t) {
             return DropdownMenuItem(
               value: t,
@@ -811,9 +808,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         const Text(
           'Brand *',
           style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textDark),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
+          ),
         ),
         const SizedBox(height: AppTheme.space4),
         TextFormField(
@@ -850,9 +848,10 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         const Text(
           'Model *',
           style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textDark),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
+          ),
         ),
         const SizedBox(height: AppTheme.space4),
         TextFormField(
@@ -889,17 +888,16 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         const Text(
           'Status *',
           style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textDark),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textDark,
+          ),
         ),
         const SizedBox(height: AppTheme.space4),
         DropdownButtonFormField<VehicleStatus>(
           initialValue: _selectedStatus,
           isExpanded: true,
-          decoration: InputDecoration(
-            errorText: _serverFieldErrors['status'],
-          ),
+          decoration: InputDecoration(errorText: _serverFieldErrors['status']),
           items: VehicleStatus.values.map((s) {
             return DropdownMenuItem(
               value: s,
@@ -909,7 +907,9 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
                     width: 7,
                     height: 7,
                     decoration: BoxDecoration(
-                        color: s.dotColor, shape: BoxShape.circle),
+                      color: s.dotColor,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(s.label, style: const TextStyle(fontSize: 14)),

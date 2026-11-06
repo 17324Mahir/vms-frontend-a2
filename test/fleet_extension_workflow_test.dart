@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:stark_vms/core/theme/app_theme.dart';
+import 'package:stark_vms/data/api/dashboard_api_client.dart';
 import 'package:stark_vms/data/api/driver_api_client.dart';
 import 'package:stark_vms/data/api/vehicle_api_client.dart';
 import 'package:stark_vms/data/auth/auth_service.dart';
@@ -35,18 +36,72 @@ void main() {
     AuthService.instance.signOut();
   });
 
-  testWidgets('DashboardScreen renders Fleet Dashboard title and KPI categories', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: const DashboardScreen(),
-        onGenerateRoute: AppRouter.generateRoute,
-      ),
-    );
+  testWidgets(
+    'Dashboard renders fleet data at desktop and phone widths',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final httpClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'totalVehicles': 12,
+            'activeVehicles': 8,
+            'maintenanceVehicles': 2,
+            'inactiveVehicles': 2,
+            'expiredDocuments': 2,
+            'expiringSoonDocuments': 3,
+            'totalMaintenanceCost': 720.75,
+            'upcomingExpiries': [
+              {
+                'id': 1,
+                'vehicleId': 17,
+                'vehicleNumber': 'STK-17',
+                'documentType': 'INSURANCE',
+                'documentNumber': 'DOC-17',
+                'expiryDate': '2030-07-15',
+                'expiryStatus': 'EXPIRING_SOON',
+              },
+            ],
+            'recentMaintenance': [
+              {
+                'id': 1,
+                'vehicleId': 18,
+                'vehicleNumber': 'STK-18',
+                'maintenanceType': 'OTHER',
+                'maintenanceDate': '2030-07-12',
+                'workshopVendor': 'Stark Workshop',
+                'odometerReading': 12000,
+                'cost': 120.64,
+              },
+            ],
+          }),
+          200,
+        );
+      });
+      addTearDown(httpClient.close);
+      final apiClient = DashboardApiClient(client: httpClient);
 
-    // Initial loading or loaded state
-    expect(find.text('Fleet Dashboard'), findsOneWidget);
-  });
+      for (final width in [1440.0, 390.0]) {
+        tester.view.physicalSize = Size(width, 900);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: DashboardScreen(apiClient: apiClient),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Fleet Dashboard'), findsOneWidget);
+        expect(find.text('Vehicle status'), findsOneWidget);
+        expect(find.text('8 active in service'), findsOneWidget);
+        expect(find.text('2 expired, 3 within 30 days'), findsOneWidget);
+        expect(find.textContaining('DOC-17'), findsOneWidget);
+        expect(find.textContaining('Stark Workshop'), findsOneWidget);
+      }
+    },
+  );
 
   testWidgets('DriverListScreen renders title and Add Driver action', (tester) async {
     await tester.pumpWidget(
