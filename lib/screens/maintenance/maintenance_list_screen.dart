@@ -142,6 +142,7 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
                     if (!isEditing) ...[
                       DropdownButtonFormField<int>(
                         initialValue: selectedVehicleId,
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Target Vehicle *',
                           border: OutlineInputBorder(),
@@ -190,6 +191,7 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
                         Expanded(
                           child: DropdownButtonFormField<MaintenanceType>(
                             initialValue: maintType,
+                            isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Service Type *',
                               border: OutlineInputBorder(),
@@ -258,6 +260,7 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
                     const SizedBox(height: AppTheme.space12),
                     DropdownButtonFormField<VehicleStatus?>(
                       initialValue: statusTransition,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Update Vehicle Status (Optional)',
                         border: OutlineInputBorder(),

@@ -278,6 +278,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen>
                   children: [
                     DropdownButtonFormField<DocumentType>(
                       initialValue: docType,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Document Type *',
                         border: OutlineInputBorder(),
@@ -761,6 +762,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen>
                         Expanded(
                           child: DropdownButtonFormField<MaintenanceType>(
                             initialValue: maintType,
+                            isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Service Type *',
                               border: OutlineInputBorder(),
@@ -829,6 +831,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen>
                     const SizedBox(height: AppTheme.space12),
                     DropdownButtonFormField<VehicleStatus?>(
                       initialValue: statusTransition,
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Update Vehicle Status (Optional)',
                         border: OutlineInputBorder(),
@@ -1028,16 +1031,24 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen>
               labelColor: AppTheme.primaryBlueHover,
               unselectedLabelColor: AppTheme.textMuted,
               indicatorColor: AppTheme.primaryBlue,
-              isScrollable: true,
-              tabAlignment: TabAlignment.start,
               tabs: [
                 Tab(
                   icon: const Icon(Icons.folder_shared_outlined, size: 20),
-                  text: 'Documents (${_documents.length})',
+                  child: Text(
+                    'Documents (${_documents.length})',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
                 Tab(
                   icon: const Icon(Icons.build_circle_outlined, size: 20),
-                  text: 'Maintenance History (${_maintenance.length})',
+                  child: Text(
+                    'Maintenance History (${_maintenance.length})',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ],
             ),
