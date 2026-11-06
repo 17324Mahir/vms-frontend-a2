@@ -3,53 +3,59 @@ import 'package:flutter/material.dart';
 /// Centralized design tokens and Material 3 theme for Stark Group VMS.
 ///
 /// Implements a unified, cohesive design system across all screens:
-/// - Light neutral canvas (#F8FAFC)
-/// - Deep navy brand/navigation (#0F172A)
+/// - Light neutral canvas (#F3F6FD)
+/// - Deep navy brand/navigation (#091226)
 /// - Pure white content surfaces (#FFFFFF)
-/// - Restrained blue primary actions (#2563EB)
-/// - High-contrast readable typography (#0F172A primary, #475569 secondary)
-/// - Subtle borders (#E2E8F0) and minimal shadows.
+/// - Restrained blue primary actions (#275CF5)
+/// - High-contrast readable typography (#101C34 primary, #53637C secondary)
+/// - Subtle borders (#DFE6F2) and minimal shadows.
 class AppTheme {
   // Brand Palette: Deep Navy & Blue
-  static const Color brandObsidian = Color(0xFF0A0F1D); // Modern deep obsidian navy
-  static const Color brandNavy = Color(0xFF0F172A); // Main brand/sidebar navy
-  static const Color navy900 = Color(0xFF0F172A); // Aliased for backward compatibility
-  static const Color navy800 = Color(0xFF1E293B); // Sidebar hover/borders
+  static const Color brandObsidian = Color(0xFF081121); // Modern deep obsidian navy
+  static const Color brandNavy = Color(0xFF091226); // Main brand/sidebar navy
+  static const Color navy900 = brandNavy;
+  static const Color navy800 = Color(0xFF233052); // Sidebar hover/borders
   static const Color navy700 = Color(0xFF334155); // Muted navy
 
-  static const Color primaryBlue = Color(0xFF2563EB); // Primary actions & selected
+  static const Color primaryBlue = Color(0xFF275CF5); // Primary actions & selected
   static const Color primaryIndigo = Color(0xFF4F46E5); // Modern electric indigo accent
-  static const Color primaryBlueHover = Color(0xFF1D4ED8); // Active/pressed blue
-  static const Color primaryBlueSubtle = Color(0xFFEFF6FF); // Selected tint
-  static const Color accentCyan = Color(0xFF06B6D4); // Cyan glow & telemetry highlight
+  static const Color primaryBlueHover = Color(0xFF1749DD); // Active/pressed blue
+  static const Color primaryBlueSubtle = Color(0xFFEDF3FF); // Selected tint
+  static const Color accentBlue = Color(0xFF8BADFF); // Blue glow & telemetry highlight
 
   // Brand Gradients (Magic UI & 21st.dev style)
   static const LinearGradient brandGradient = LinearGradient(
-    colors: [Color(0xFF2563EB), Color(0xFF4F46E5)],
+    colors: [primaryBlue, primaryBlueHover],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient darkSidebarGradient = LinearGradient(
-    colors: [Color(0xFF0A0F1D), Color(0xFF0F172A)],
+    colors: [brandNavy, Color(0xFF0C1934)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
+  static const RadialGradient authBackdrop = RadialGradient(
+    center: Alignment(0.65, 0.15),
+    radius: 1.1,
+    colors: [Color(0xFF18346C), brandObsidian],
+  );
+
   // Neutral Background & Surfaces
-  static const Color canvasLight = Color(0xFFF8FAFC); // Main page canvas
-  static const Color neutralBg = Color(0xFFF8FAFC); // Page background alias
+  static const Color canvasLight = Color(0xFFF3F6FD); // Main page canvas
+  static const Color neutralBg = canvasLight;
   static const Color surfaceWhite = Color(0xFFFFFFFF); // Content cards & surfaces
-  static const Color borderNeutral = Color(0xFFE2E8F0); // Subtle borders
-  static const Color borderLight = Color(0xFFE2E8F0); // Light card & table borders
+  static const Color borderNeutral = Color(0xFFDFE6F2); // Subtle borders
+  static const Color borderLight = borderNeutral;
   static const Color borderSubtle = Color(0xFFF1F5F9); // Table dividers / light borders
-  static const Color borderHover = Color(0xFF93C5FD); // Interactive card hover border
+  static const Color borderHover = Color(0xFF9BB7FF); // Interactive card hover border
 
   // Typography Neutrals
-  static const Color textDark = Color(0xFF0F172A); // High-contrast primary text
-  static const Color textPrimary = Color(0xFF0F172A); // Semantic alias
-  static const Color textMuted = Color(0xFF475569); // High-contrast secondary / helper text
-  static const Color textSecondary = Color(0xFF475569); // Semantic alias
+  static const Color textDark = Color(0xFF101C34); // High-contrast primary text
+  static const Color textPrimary = textDark;
+  static const Color textMuted = Color(0xFF53637C); // High-contrast secondary / helper text
+  static const Color textSecondary = textMuted;
   static const Color textDisabled = Color(0xFF94A3B8); // Inactive / placeholder
 
   // Feedback Colors (WCAG AAA compliant)

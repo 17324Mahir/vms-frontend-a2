@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'core/theme/app_theme.dart';
 import 'data/auth/auth_service.dart';
 import 'router/app_router.dart';
@@ -14,10 +15,7 @@ void main() {
 class StarkVmsApp extends StatelessWidget {
   final String initialRoute;
 
-  const StarkVmsApp({
-    super.key,
-    this.initialRoute = AppRouter.homeRoute,
-  });
+  const StarkVmsApp({super.key, this.initialRoute = AppRouter.homeRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +25,9 @@ class StarkVmsApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       initialRoute: initialRoute,
       onGenerateRoute: AppRouter.generateRoute,
+      onGenerateInitialRoutes: AppRouter.isWebWorkspace
+          ? (route) => [AppRouter.generateRoute(RouteSettings(name: route))]
+          : null,
     );
   }
 }

@@ -181,14 +181,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.canvasLight,
+      backgroundColor: AppTheme.brandObsidian,
       body: Stack(
         children: [
           const Positioned.fill(
-            child: AmbientGridPattern(
-              spacing: 28,
-              dotRadius: 1.0,
-              dotColor: Color(0xFFE2E8F0),
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: AppTheme.authBackdrop),
+              child: AmbientGridPattern(
+                spacing: 28,
+                dotRadius: 1.0,
+                dotColor: AppTheme.navy800,
+              ),
             ),
           ),
           SafeArea(
@@ -199,7 +202,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   constraints: const BoxConstraints(maxWidth: 460),
                   child: BorderBeam(
                     borderRadius: AppTheme.radiusLg,
-                    beamColor: const Color(0xFF38BDF8),
+                    beamColor: AppTheme.accentBlue,
                     accentColor: AppTheme.primaryBlue,
                     child: Card(
                       color: AppTheme.surfaceWhite,

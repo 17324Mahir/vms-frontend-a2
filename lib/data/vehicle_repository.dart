@@ -1,14 +1,15 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
+
 import '../core/errors/api_exception.dart';
+import '../models/page_response.dart';
 import '../models/vehicle.dart';
 import 'api/vehicle_api_client.dart';
 import 'mock_data.dart';
 
 /// Field options for sorting the vehicle list.
-enum VehicleSortField {
-  vehicleNumber,
-  company,
-}
+enum VehicleSortField { vehicleNumber, company }
 
 /// Centralized state manager and repository for Stark Group VMS fleet data.
 ///
@@ -26,13 +27,13 @@ class VehicleRepository extends ChangeNotifier {
   final bool _isFake;
 
   VehicleRepository({VehicleApiClient? apiClient})
-      : _apiClient = apiClient ?? VehicleApiClient(),
-        _isFake = false;
+    : _apiClient = apiClient ?? VehicleApiClient(),
+      _isFake = false;
 
   /// Test-only constructor simulating the backend in-memory without network calls.
   VehicleRepository.fake({List<Vehicle>? initialVehicles})
-      : _apiClient = null,
-        _isFake = true {
+    : _apiClient = null,
+      _isFake = true {
     if (initialVehicles != null) {
       _vehicles.addAll(initialVehicles);
     }
@@ -59,6 +60,7 @@ class VehicleRepository extends ChangeNotifier {
 
   /// Clears in-memory vehicle cache upon user sign-out or session invalidation.
   void clearCache() {
+    _fetchCounter++;
     _vehicles.clear();
     _errorMessage = null;
     _isLoading = false;
@@ -141,8 +143,9 @@ class VehicleRepository extends ChangeNotifier {
       return vehicle;
     }
 
-    final created =
-        await _apiClient!.createVehicle(vehicle.toCreateUpdateJson(assignedDriverId: assignedDriverId));
+    final created = await _apiClient!.createVehicle(
+      vehicle.toCreateUpdateJson(assignedDriverId: assignedDriverId),
+    );
     _vehicles.removeWhere((v) => v.id == created.id);
     _vehicles.insert(0, created);
     notifyListeners();
@@ -185,7 +188,11 @@ class VehicleRepository extends ChangeNotifier {
         notifyListeners();
         return updated;
       }
-      throw const ApiException(statusCode: 404, code: 'NOT_FOUND', message: 'Vehicle not found');
+      throw const ApiException(
+        statusCode: 404,
+        code: 'NOT_FOUND',
+        message: 'Vehicle not found',
+      );
     }
 
     final updated = await _apiClient!.updateVehicleStatus(id, status);
@@ -223,23 +230,41 @@ class VehicleRepository extends ChangeNotifier {
     return updated;
   }
 
+  Future<List<String>> fetchCompanies() async {
+    if (!_isFake) return _apiClient!.getCompanies();
+    return _vehicles.map((vehicle) => vehicle.company).toSet().toList()..sort();
+  }
+
   /// Server-side paginated and filtered search.
-  Future<dynamic> searchPaged({
+  Future<PageResponse<Vehicle>> searchPaged({
     int page = 0,
     int size = 10,
     String? search,
     VehicleStatus? status,
     String? company,
-    String sortBy = 'id',
-    String sortDir = 'asc',
+    VehicleSortField sortField = VehicleSortField.vehicleNumber,
+    bool sortAscending = true,
   }) async {
     if (_isFake) {
       final filtered = query(
         searchQuery: search,
         statusFilter: status,
         companyFilter: company,
+        sortField: sortField,
+        sortAscending: sortAscending,
       );
-      return filtered;
+      final start = min(page * size, filtered.length);
+      final end = min(start + size, filtered.length);
+      final totalPages = (filtered.length / size).ceil();
+      return PageResponse(
+        content: filtered.sublist(start, end),
+        page: page,
+        size: size,
+        totalElements: filtered.length,
+        totalPages: totalPages,
+        first: page == 0,
+        last: page + 1 >= totalPages,
+      );
     }
     return _apiClient!.searchVehicles(
       page: page,
@@ -247,8 +272,8 @@ class VehicleRepository extends ChangeNotifier {
       search: search,
       status: status,
       company: company,
-      sortBy: sortBy,
-      sortDir: sortDir,
+      sortBy: sortField.name,
+      sortDir: sortAscending ? 'asc' : 'desc',
     );
   }
 
@@ -305,7 +330,8 @@ class VehicleRepository extends ChangeNotifier {
       // Search matching Vehicle Number, Company, Brand, and Model
       if (searchQuery != null && searchQuery.trim().isNotEmpty) {
         final q = searchQuery.trim().toLowerCase();
-        final matches = vehicle.vehicleNumber.toLowerCase().contains(q) ||
+        final matches =
+            vehicle.vehicleNumber.toLowerCase().contains(q) ||
             vehicle.company.toLowerCase().contains(q) ||
             vehicle.brand.toLowerCase().contains(q) ||
             vehicle.model.toLowerCase().contains(q);

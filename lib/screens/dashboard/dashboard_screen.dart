@@ -195,7 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: AmbientGridPattern(
               spacing: 24,
               dotRadius: 1.0,
-              dotColor: Color(0xFFE2E8F0),
+              dotColor: AppTheme.borderNeutral,
             ),
           ),
           Padding(
@@ -271,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       label: const Text('View Fleet Directory'),
                       onPressed: () => Navigator.of(context).pushNamed(AppRouter.vehiclesRoute),
                       backgroundColor: AppTheme.primaryBlueSubtle,
-                      side: const BorderSide(color: Color(0xFFBFDBFE)),
+                      side: const BorderSide(color: AppTheme.borderHover),
                     ),
                     ActionChip(
                       avatar: const Icon(Icons.badge_rounded, size: 16, color: Color(0xFF7C3AED)),
@@ -312,8 +312,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         valueText: stats.totalVehicles.toString(),
         subtitle: '${stats.activeVehicles} active in service',
         icon: Icons.directions_car_rounded,
-        iconColor: const Color(0xFF2563EB),
-        bgColor: const Color(0xFFEFF6FF),
+        iconColor: AppTheme.primaryBlue,
+        bgColor: AppTheme.primaryBlueSubtle,
         hasBeam: true,
         route: AppRouter.vehiclesRoute,
       ),
@@ -392,7 +392,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             return SpotlightHoverCard(
               borderRadius: AppTheme.radiusLg,
               hasBorderBeam: card.hasBeam,
-              beamColor: const Color(0xFF38BDF8),
+              beamColor: AppTheme.accentBlue,
               beamAccentColor: AppTheme.primaryBlue,
               onTap: card.route != null ? () => Navigator.of(context).pushNamed(card.route!) : null,
               child: Row(
@@ -471,7 +471,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
+                    color: AppTheme.primaryBlueSubtle,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.description_outlined, size: 18, color: AppTheme.primaryBlue),
@@ -577,8 +577,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   onTap: () {
                     Navigator.of(context).pushNamed(
-                      AppRouter.vehicleDetailsRoute,
-                      arguments: {'id': doc.vehicleId, 'initialTab': 0},
+                      AppRouter.vehicleDetailsPath(doc.vehicleId),
                     );
                   },
                 );
@@ -704,8 +703,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   onTap: () {
                     Navigator.of(context).pushNamed(
-                      AppRouter.vehicleDetailsRoute,
-                      arguments: {'id': m.vehicleId, 'initialTab': 1},
+                      AppRouter.vehicleDetailsPath(
+                        m.vehicleId,
+                        initialTab: 1,
+                      ),
                     );
                   },
                 );

@@ -115,14 +115,17 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.neutralBg,
+      backgroundColor: AppTheme.brandObsidian,
       body: Stack(
         children: [
           const Positioned.fill(
-            child: AmbientGridPattern(
-              spacing: 28,
-              dotRadius: 1.0,
-              dotColor: Color(0xFFE2E8F0),
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: AppTheme.authBackdrop),
+              child: AmbientGridPattern(
+                spacing: 28,
+                dotRadius: 1.0,
+                dotColor: AppTheme.navy800,
+              ),
             ),
           ),
           SafeArea(
@@ -133,7 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   constraints: const BoxConstraints(maxWidth: 440),
                   child: BorderBeam(
                     borderRadius: AppTheme.radiusLg,
-                    beamColor: const Color(0xFF38BDF8),
+                    beamColor: AppTheme.accentBlue,
                     accentColor: AppTheme.primaryBlue,
                     child: Card(
                       elevation: 0,
@@ -565,7 +568,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         TextButton.icon(
           onPressed: () {
-            Navigator.of(context).pushReplacementNamed(AppRouter.homeRoute);
+            AppRouter.returnToHome(context);
           },
           icon: const Icon(Icons.arrow_back, size: 14),
           label: const Text('Return to Home', style: TextStyle(fontSize: 12)),

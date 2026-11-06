@@ -172,14 +172,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.canvasLight,
+      backgroundColor: AppTheme.brandObsidian,
       body: Stack(
         children: [
           const Positioned.fill(
-            child: AmbientGridPattern(
-              spacing: 28,
-              dotRadius: 1.0,
-              dotColor: Color(0xFFE2E8F0),
+            child: DecoratedBox(
+              decoration: BoxDecoration(gradient: AppTheme.authBackdrop),
+              child: AmbientGridPattern(
+                spacing: 28,
+                dotRadius: 1.0,
+                dotColor: AppTheme.navy800,
+              ),
             ),
           ),
           SafeArea(
@@ -190,7 +193,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   constraints: const BoxConstraints(maxWidth: 460),
                   child: BorderBeam(
                     borderRadius: AppTheme.radiusLg,
-                    beamColor: const Color(0xFF38BDF8),
+                    beamColor: AppTheme.accentBlue,
                     accentColor: AppTheme.primaryBlue,
                     child: Card(
                       color: AppTheme.surfaceWhite,
@@ -454,7 +457,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         // Return to Home Link
                         TextButton.icon(
                           onPressed: () {
-                            Navigator.of(context).pushReplacementNamed(AppRouter.homeRoute);
+                            AppRouter.returnToHome(context);
                           },
                           icon: const Icon(Icons.arrow_back, size: 14, color: AppTheme.textMuted),
                           label: const Text('Return to Home', style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),

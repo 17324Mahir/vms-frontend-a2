@@ -638,8 +638,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
                     InkWell(
                       onTap: () {
                         Navigator.of(context).pushNamed(
-                          AppRouter.vehicleDetailsRoute,
-                          arguments: {'id': doc.vehicleId, 'initialTab': 0},
+                          AppRouter.vehicleDetailsPath(doc.vehicleId),
                         ).then((_) => _loadDocuments());
                       },
                       child: Container(
@@ -695,8 +694,7 @@ class _DocumentListScreenState extends State<DocumentListScreen> {
           OutlinedButton.icon(
             onPressed: () {
               Navigator.of(context).pushNamed(
-                AppRouter.vehicleDetailsRoute,
-                arguments: {'id': doc.vehicleId, 'initialTab': 0},
+                AppRouter.vehicleDetailsPath(doc.vehicleId),
               ).then((_) => _loadDocuments());
             },
             icon: const Icon(Icons.arrow_forward_rounded, size: 14),

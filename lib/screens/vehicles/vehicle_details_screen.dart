@@ -7,7 +7,6 @@ import '../../data/api/document_api_client.dart';
 import '../../data/api/maintenance_api_client.dart';
 import '../../data/driver_repository.dart';
 import '../../data/vehicle_repository.dart';
-import '../../models/driver.dart';
 import '../../models/maintenance_record.dart';
 import '../../models/vehicle.dart';
 import '../../models/vehicle_document.dart';
@@ -49,7 +48,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
   Vehicle? _vehicle;
   List<VehicleDocument> _documents = [];
   List<MaintenanceRecord> _maintenance = [];
-  List<Driver> _availableDrivers = [];
+  bool _assigningDriver = false;
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -88,14 +87,12 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
       final v = await _vehicleRepo.fetchVehicleById(widget.vehicleId);
       final docs = await _docClient.getDocumentsForVehicle(widget.vehicleId);
       final maint = await _maintClient.getMaintenanceHistory(widget.vehicleId);
-      final drivers = await _driverRepo.getAvailableDrivers();
 
       if (mounted) {
         setState(() {
           _vehicle = v;
           _documents = docs;
           _maintenance = maint;
-          _availableDrivers = drivers;
           _isLoading = false;
         });
       }
@@ -132,89 +129,106 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
   }
 
   Future<void> _showAssignDriverDialog() async {
-    if (_vehicle == null) return;
+    final vehicle = _vehicle;
+    if (vehicle == null || _assigningDriver) return;
+
+    final currentDriver = vehicle.assignedDriver;
     final messenger = ScaffoldMessenger.of(context);
+    var selectedDriverId = currentDriver?.id;
 
-    int? selectedDriverId = _vehicle!.assignedDriver?.id;
+    setState(() => _assigningDriver = true);
+    try {
+      final availableDrivers = await _driverRepo.getAvailableDrivers();
+      if (!mounted || ModalRoute.isCurrentOf(context) == false) return;
 
-    await showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogCtx, setDialogState) {
-          return AlertDialog(
-            title: const Text('Assign Driver'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Select a driver for ${_vehicle!.vehicleNumber} (${_vehicle!.brandModel}):',
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                ),
-                const SizedBox(height: AppTheme.space16),
-                DropdownButtonFormField<int?>(
-                  initialValue: selectedDriverId,
-                  decoration: const InputDecoration(
-                    labelText: 'Assigned Driver',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('No Driver (Unassigned)', style: TextStyle(fontStyle: FontStyle.italic)),
-                    ),
-                    ..._availableDrivers.map((d) {
-                      return DropdownMenuItem<int?>(
-                        value: d.id,
-                        child: Text('${d.name} (${d.licenseNumber}) - ${d.status.label}'),
-                      );
-                    }),
-                  ],
-                  onChanged: (val) {
-                    setDialogState(() => selectedDriverId = val);
-                  },
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel'),
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Assign Driver'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Select a driver for ${vehicle.vehicleNumber} (${vehicle.brandModel}):',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               ),
-              FilledButton(
-                onPressed: () async {
-                  Navigator.of(ctx).pop();
-                  try {
-                    final Vehicle updated;
-                    if (selectedDriverId == null) {
-                      updated = await _vehicleRepo.unassignDriver(_vehicle!.id);
-                    } else {
-                      updated = await _vehicleRepo.assignDriver(_vehicle!.id, selectedDriverId!);
-                    }
-                    if (mounted) {
-                      setState(() => _vehicle = updated);
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Driver assignment updated successfully'),
-                          backgroundColor: Color(0xFF15803D),
+              const SizedBox(height: AppTheme.space16),
+              DropdownButtonFormField<int?>(
+                initialValue: currentDriver?.id,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Assigned Driver',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  const DropdownMenuItem<int?>(
+                    value: null,
+                    child: Text('No Driver (Unassigned)'),
+                  ),
+                  if (currentDriver != null)
+                    DropdownMenuItem<int?>(
+                      value: currentDriver.id,
+                      child: Text(
+                        '${currentDriver.name} (${currentDriver.licenseNumber}) - Current',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  for (final driver in availableDrivers)
+                    if (driver.id != currentDriver?.id)
+                      DropdownMenuItem<int?>(
+                        value: driver.id,
+                        child: Text(
+                          '${driver.name} (${driver.licenseNumber})',
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      messenger.showSnackBar(
-                        SnackBar(content: Text('Error assigning driver: $e'), backgroundColor: const Color(0xFFDC2626)),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Save Assignment'),
+                      ),
+                ],
+                onChanged: (value) => selectedDriverId = value,
               ),
             ],
-          );
-        },
-      ),
-    );
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Save Assignment'),
+            ),
+          ],
+        ),
+      );
+
+      if (!mounted || confirmed != true || selectedDriverId == currentDriver?.id) {
+        return;
+      }
+
+      final driverId = selectedDriverId;
+      final updated = driverId == null
+          ? await _vehicleRepo.unassignDriver(vehicle.id)
+          : await _vehicleRepo.assignDriver(vehicle.id, driverId);
+      if (!mounted) return;
+
+      setState(() => _vehicle = updated);
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Driver assignment updated successfully'),
+          backgroundColor: Color(0xFF15803D),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Error assigning driver: $e'),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _assigningDriver = false);
+    }
   }
 
   Future<void> _showUploadDocumentDialog({VehicleDocument? documentToEdit}) async {
@@ -680,8 +694,22 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                     );
                     return;
                   }
-                  final costVal = double.tryParse(costCtrl.text.trim()) ?? 0.0;
-                  final odoVal = int.tryParse(odoCtrl.text.trim());
+                  final costVal = double.tryParse(costCtrl.text.trim());
+                  if (costVal == null || !costVal.isFinite || costVal < 0) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Enter a valid, nonnegative cost.')),
+                    );
+                    return;
+                  }
+
+                  final odometer = odoCtrl.text.trim();
+                  final odoVal = int.tryParse(odometer);
+                  if (odometer.isNotEmpty && (odoVal == null || odoVal < 0)) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Enter a nonnegative whole number for the odometer.')),
+                    );
+                    return;
+                  }
 
                   Navigator.of(ctx).pop();
                   try {
@@ -699,6 +727,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                     } else {
                       await _maintClient.recordMaintenance(_vehicle!.id, payload);
                     }
+                    if (!mounted) return;
                     await _loadAllData();
                     if (mounted) {
                       messenger.showSnackBar(
@@ -725,12 +754,23 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
     );
   }
 
+  void _goBack() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else {
+      navigator.pushReplacementNamed(AppRouter.vehiclesRoute);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const AppShell(
+      return AppShell(
         title: 'Vehicle Details',
-        child: Center(child: CircularProgressIndicator()),
+        showBackButton: true,
+        onBack: _goBack,
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -738,6 +778,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
       return AppShell(
         title: 'Vehicle Details',
         showBackButton: true,
+        onBack: _goBack,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(AppTheme.space24),
@@ -761,7 +802,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
     return AppShell(
       title: '${v.vehicleNumber} Details',
       showBackButton: true,
-      onBack: () => Navigator.of(context).pushNamedAndRemoveUntil(AppRouter.vehiclesRoute, (_) => false),
+      onBack: _goBack,
       primaryAction: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -920,7 +961,7 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                     ),
                     // Driver Assignment Button
                     OutlinedButton.icon(
-                      onPressed: _showAssignDriverDialog,
+                      onPressed: _assigningDriver ? null : _showAssignDriverDialog,
                       icon: const Icon(Icons.person, size: 16),
                       label: Text(
                         v.assignedDriver != null ? 'Driver: ${v.assignedDriver!.name}' : 'Assign Driver',

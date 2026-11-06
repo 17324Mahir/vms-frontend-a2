@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+
 import '../../core/errors/api_exception.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/responsive.dart';
 import '../../data/mock_data.dart';
 import '../../data/vehicle_repository.dart';
+import '../../models/page_response.dart';
 import '../../models/vehicle.dart';
 import '../../router/app_router.dart';
 import '../../widgets/app_shell.dart';
@@ -12,7 +16,7 @@ import '../../widgets/confirmation_dialog.dart';
 import '../../widgets/status_badge.dart';
 
 /// Primary Fleet Management screen displaying all registered vehicles with
-/// local search, multi-attribute filtering, sorting, pagination, and deletion.
+/// server-side search, filtering, sorting, and pagination.
 class VehicleListScreen extends StatefulWidget {
   const VehicleListScreen({super.key});
 
@@ -33,28 +37,120 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
   static const int _pageSize = 10;
 
   final Set<int> _deletingIds = {};
+  PageResponse<Vehicle>? _results;
+  List<String> _companies = [];
+  String? _errorMessage;
+  bool _isLoading = true;
+  int _requestId = 0;
+  Timer? _searchDelay;
 
   @override
   void initState() {
     super.initState();
-    // Fetch live vehicles from the backend API on initial mount
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadVehicles();
-    });
+    _loadVehicles(refreshCompanies: true);
   }
 
   @override
   void dispose() {
+    _searchDelay?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadVehicles({bool silent = false}) async {
+  Future<void> _loadVehicles({
+    bool silent = false,
+    bool refreshCompanies = false,
+  }) async {
+    if (!mounted) return;
+    _searchDelay?.cancel();
+    final requestId = ++_requestId;
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      if (!silent) _results = null;
+    });
+
+    final repository = VehicleRepository.instance;
+    if (refreshCompanies) unawaited(_loadCompanies(repository));
     try {
-      await VehicleRepository.instance.fetchVehicles(silent: silent);
-    } catch (_) {
-      // Error is captured in VehicleRepository.errorMessage
+      final result = await repository.searchPaged(
+        page: _currentPage - 1,
+        size: _pageSize,
+        search: _searchController.text,
+        status: _statusFilter,
+        company: _companyFilter,
+        sortField: _sortField,
+        sortAscending: _sortAscending,
+      );
+      if (!mounted || requestId != _requestId) return;
+
+      final lastPage = max(1, result.totalPages);
+      if (_currentPage > lastPage) {
+        _currentPage = lastPage;
+        await _loadVehicles();
+        return;
+      }
+      setState(() => _results = result);
+    } catch (error) {
+      if (!mounted || requestId != _requestId) return;
+      setState(() {
+        _errorMessage = switch (error) {
+          ApiException() => error.message,
+          NetworkException() => error.message,
+          _ => 'Could not load vehicles. Please try again.',
+        };
+      });
+    } finally {
+      if (mounted && requestId == _requestId) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  int _companiesRequestId = 0;
+
+  Future<void> _loadCompanies(VehicleRepository repository) async {
+    final requestId = ++_companiesRequestId;
+    try {
+      final companies = await repository.fetchCompanies();
+      if (mounted && requestId == _companiesRequestId) {
+        setState(() => _companies = companies);
+      }
+    } on ApiException {
+      // Company options can retry on refresh without blocking the vehicle list.
+    } on NetworkException {
+      // Keep previously loaded options while the API is unavailable.
+    }
+  }
+
+  void _searchChanged() {
+    _searchDelay?.cancel();
+    _requestId++;
+    setState(() {
+      _currentPage = 1;
+      _isLoading = true;
+      _errorMessage = null;
+      _results = null;
+    });
+    _searchDelay = Timer(const Duration(milliseconds: 250), _loadVehicles);
+  }
+
+  void _changePage(int page) {
+    _currentPage = page;
+    _loadVehicles();
+  }
+
+  Future<void> _openDetails(int vehicleId) async {
+    await Navigator.of(context).pushNamed(
+      AppRouter.vehicleDetailsPath(vehicleId),
+    );
+    if (mounted) _loadVehicles(silent: true, refreshCompanies: true);
+  }
+
+  void _refreshAfterSave(Object? result) {
+    if (!mounted || result is! Vehicle) return;
+    if (!_matchesActiveFilters(result)) _resetFilters();
+    _loadVehicles(refreshCompanies: true);
   }
 
   bool get _hasActiveFilters =>
@@ -79,13 +175,16 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     return true;
   }
 
+  void _resetFilters() {
+    _searchController.clear();
+    _statusFilter = null;
+    _companyFilter = 'All Companies';
+    _currentPage = 1;
+  }
+
   void _clearFilters() {
-    setState(() {
-      _searchController.clear();
-      _statusFilter = null;
-      _companyFilter = 'All Companies';
-      _currentPage = 1;
-    });
+    _resetFilters();
+    _loadVehicles();
   }
 
   void _toggleSort(VehicleSortField field) {
@@ -98,6 +197,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
       }
       _currentPage = 1;
     });
+    _loadVehicles();
   }
 
   Future<void> _handleDelete(Vehicle vehicle) async {
@@ -117,7 +217,8 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                'Vehicle ${vehicle.vehicleNumber} was removed from the fleet.'),
+              'Vehicle ${vehicle.vehicleNumber} was removed from the fleet.',
+            ),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -127,7 +228,8 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'Vehicle ${vehicle.vehicleNumber} was already removed or is unavailable.'),
+                'Vehicle ${vehicle.vehicleNumber} was already removed or is unavailable.',
+              ),
               backgroundColor: AppTheme.statusMaintenanceText,
               behavior: SnackBarBehavior.floating,
             ),
@@ -162,6 +264,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
       } finally {
         if (mounted) {
           setState(() => _deletingIds.remove(vehicle.id));
+          _loadVehicles(silent: true, refreshCompanies: true);
         }
       }
     }
@@ -169,88 +272,60 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = VehicleRepository.instance;
     final isDesktop = Responsive.isDesktop(context);
+    final vehicles = _results?.content ?? const <Vehicle>[];
+    final totalMatches = _results?.totalElements ?? 0;
+    final totalPages = max(1, _results?.totalPages ?? 0);
+    final startIndex = (_currentPage - 1) * _pageSize;
 
-    return ListenableBuilder(
-      listenable: repo,
-      builder: (context, _) {
-        final queryResults = repo.query(
-          searchQuery: _searchController.text,
-          statusFilter: _statusFilter,
-          companyFilter: _companyFilter,
-          sortField: _sortField,
-          sortAscending: _sortAscending,
-        );
-
-        final totalMatches = queryResults.length;
-        final totalPages = max(1, (totalMatches / _pageSize).ceil());
-
-        // Auto-adjust page if current page exceeds total pages
-        if (_currentPage > totalPages) {
-          _currentPage = totalPages;
-        }
-
-        final startIndex = (_currentPage - 1) * _pageSize;
-        final endIndex = min(startIndex + _pageSize, totalMatches);
-        final paginatedVehicles = totalMatches > 0
-            ? queryResults.sublist(startIndex, endIndex)
-            : <Vehicle>[];
-
-        return AppShell(
-          title: 'Vehicles',
-          primaryAction: ElevatedButton.icon(
-            onPressed: () async {
-              final result = await Navigator.of(context)
-                  .pushNamed(AppRouter.vehicleNewRoute);
-              if (result is Vehicle && mounted) {
-                if (!_matchesActiveFilters(result)) {
-                  _clearFilters();
-                }
-              }
-            },
-            icon: const Icon(Icons.add, size: 18),
-            label: Text(isDesktop ? 'Register vehicle' : 'Register'),
-          ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppTheme.space24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildHeader(repo.totalCount, repo.isLoading),
-                if (repo.hasError && repo.totalCount > 0) ...[
-                  const SizedBox(height: AppTheme.space12),
-                  _buildRefreshErrorBanner(repo.errorMessage!),
-                ],
-                const SizedBox(height: AppTheme.space20),
-                _buildToolbar(repo.allVehicles),
-                const SizedBox(height: AppTheme.space16),
-                if (repo.isLoading && repo.totalCount == 0)
-                  _buildLoadingState()
-                else if (repo.hasError && repo.totalCount == 0)
-                  _buildErrorState(repo.errorMessage!)
-                else if (repo.totalCount == 0)
-                  _buildNoVehiclesRegistered()
-                else if (totalMatches == 0)
-                  _buildNoMatchingResults()
-                else ...[
-                  if (MediaQuery.sizeOf(context).width >= 850)
-                    _buildDesktopTable(paginatedVehicles)
-                  else
-                    _buildMobileCards(paginatedVehicles),
-                  const SizedBox(height: AppTheme.space16),
-                  _buildPaginationControls(
-                    startIndex: startIndex + 1,
-                    endIndex: endIndex,
-                    totalMatches: totalMatches,
-                    totalPages: totalPages,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
+    return AppShell(
+      title: 'Vehicles',
+      primaryAction: ElevatedButton.icon(
+        onPressed: () async {
+          final result = await Navigator.of(context)
+              .pushNamed(AppRouter.vehicleNewRoute);
+          _refreshAfterSave(result);
+        },
+        icon: const Icon(Icons.add, size: 18),
+        label: Text(isDesktop ? 'Register vehicle' : 'Register'),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppTheme.space24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildHeader(totalMatches, _isLoading),
+            if (_errorMessage != null && vehicles.isNotEmpty) ...[
+              const SizedBox(height: AppTheme.space12),
+              _buildRefreshErrorBanner(_errorMessage!),
+            ],
+            const SizedBox(height: AppTheme.space20),
+            _buildToolbar(),
+            const SizedBox(height: AppTheme.space16),
+            if (_isLoading && vehicles.isEmpty)
+              _buildLoadingState()
+            else if (_errorMessage != null && vehicles.isEmpty)
+              _buildErrorState(_errorMessage!)
+            else if (totalMatches == 0)
+              _hasActiveFilters
+                  ? _buildNoMatchingResults()
+                  : _buildNoVehiclesRegistered()
+            else ...[
+              if (MediaQuery.sizeOf(context).width >= 850)
+                _buildDesktopTable(vehicles)
+              else
+                _buildMobileCards(vehicles),
+              const SizedBox(height: AppTheme.space16),
+              _buildPaginationControls(
+                startIndex: startIndex + 1,
+                endIndex: startIndex + vehicles.length,
+                totalMatches: totalMatches,
+                totalPages: totalPages,
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -311,7 +386,9 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                     )
                   : const Icon(Icons.refresh, size: 18),
               tooltip: 'Refresh',
-              onPressed: isLoading ? null : () => _loadVehicles(silent: true),
+              onPressed: isLoading
+                  ? null
+                  : () => _loadVehicles(silent: true, refreshCompanies: true),
             ),
           ],
         ),
@@ -329,8 +406,11 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.warning_amber_rounded,
-              size: 18, color: AppTheme.errorRed),
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 18,
+            color: AppTheme.errorRed,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -339,7 +419,8 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
             ),
           ),
           TextButton(
-            onPressed: () => _loadVehicles(silent: true),
+            onPressed: () =>
+                _loadVehicles(silent: true, refreshCompanies: true),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               minimumSize: Size.zero,
@@ -351,7 +432,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     );
   }
 
-  Widget _buildToolbar(List<Vehicle> allVehicles) {
+  Widget _buildToolbar() {
     final isDesktop = MediaQuery.sizeOf(context).width >= 900;
 
     return Card(
@@ -360,20 +441,11 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         child: isDesktop
             ? Row(
                 children: [
-                  Expanded(
-                    flex: 3,
-                    child: _buildSearchInput(),
-                  ),
+                  Expanded(flex: 3, child: _buildSearchInput()),
                   const SizedBox(width: AppTheme.space16),
-                  Expanded(
-                    flex: 2,
-                    child: _buildCompanyDropdown(allVehicles),
-                  ),
+                  Expanded(flex: 2, child: _buildCompanyDropdown()),
                   const SizedBox(width: AppTheme.space16),
-                  Expanded(
-                    flex: 2,
-                    child: _buildStatusDropdown(),
-                  ),
+                  Expanded(flex: 2, child: _buildStatusDropdown()),
                   if (_hasActiveFilters) ...[
                     const SizedBox(width: AppTheme.space12),
                     TextButton.icon(
@@ -391,7 +463,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                   const SizedBox(height: AppTheme.space12),
                   Row(
                     children: [
-                      Expanded(child: _buildCompanyDropdown(allVehicles)),
+                      Expanded(child: _buildCompanyDropdown()),
                       const SizedBox(width: AppTheme.space12),
                       Expanded(child: _buildStatusDropdown()),
                     ],
@@ -418,28 +490,32 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
       controller: _searchController,
       decoration: InputDecoration(
         hintText: 'Search by vehicle number, company, brand, or model...',
-        prefixIcon:
-            const Icon(Icons.search, size: 18, color: AppTheme.textMuted),
+        prefixIcon: const Icon(
+          Icons.search,
+          size: 18,
+          color: AppTheme.textMuted,
+        ),
         suffixIcon: _searchController.text.isNotEmpty
             ? IconButton(
                 icon: const Icon(Icons.clear, size: 16),
                 tooltip: 'Clear search query',
                 onPressed: () {
                   _searchController.clear();
-                  setState(() => _currentPage = 1);
+                  _changePage(1);
                 },
               )
             : null,
       ),
-      onChanged: (_) => setState(() => _currentPage = 1),
+      onChanged: (_) => _searchChanged(),
     );
   }
 
-  Widget _buildCompanyDropdown(List<Vehicle> allVehicles) {
+  Widget _buildCompanyDropdown() {
     final companies = {
       'All Companies',
       ...kDefaultCompanies,
-      for (final v in allVehicles) v.company,
+      ..._companies,
+      ?_companyFilter,
     }.toList();
 
     final currentValue = companies.contains(_companyFilter)
@@ -453,17 +529,17 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
       decoration: const InputDecoration(
         contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
-      items: companies.map(
-        (c) => DropdownMenuItem(
-          value: c,
-          child: Text(c, style: const TextStyle(fontSize: 13)),
-        ),
-      ).toList(),
+      items: companies
+          .map(
+            (c) => DropdownMenuItem(
+              value: c,
+              child: Text(c, style: const TextStyle(fontSize: 13)),
+            ),
+          )
+          .toList(),
       onChanged: (val) {
-        setState(() {
-          _companyFilter = val;
-          _currentPage = 1;
-        });
+        _companyFilter = val;
+        _changePage(1);
       },
     );
   }
@@ -489,8 +565,10 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                 Container(
                   width: 6,
                   height: 6,
-                  decoration:
-                      BoxDecoration(color: s.dotColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: s.dotColor,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(s.label, style: const TextStyle(fontSize: 13)),
@@ -500,10 +578,8 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         ),
       ],
       onChanged: (val) {
-        setState(() {
-          _statusFilter = val;
-          _currentPage = 1;
-        });
+        _statusFilter = val;
+        _changePage(1);
       },
     );
   }
@@ -541,8 +617,11 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
         child: Column(
           children: [
-            const Icon(Icons.cloud_off_rounded,
-                size: 48, color: AppTheme.errorRed),
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 48,
+              color: AppTheme.errorRed,
+            ),
             const SizedBox(height: AppTheme.space16),
             const Text(
               'Unable to load fleet data',
@@ -603,12 +682,15 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     return TableRow(
       decoration: const BoxDecoration(
         color: AppTheme.canvasLight,
-        border:
-            Border(bottom: BorderSide(color: AppTheme.borderNeutral, width: 1)),
+        border: Border(
+          bottom: BorderSide(color: AppTheme.borderNeutral, width: 1),
+        ),
       ),
       children: [
         _buildSortableHeaderCell(
-            'VEHICLE NUMBER', VehicleSortField.vehicleNumber),
+          'VEHICLE NUMBER',
+          VehicleSortField.vehicleNumber,
+        ),
         _buildSortableHeaderCell('COMPANY', VehicleSortField.company),
         _buildStaticHeaderCell('TYPE'),
         _buildStaticHeaderCell('BRAND'),
@@ -646,8 +728,8 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
             Icon(
               isSorted
                   ? (_sortAscending
-                      ? Icons.arrow_upward_rounded
-                      : Icons.arrow_downward_rounded)
+                        ? Icons.arrow_upward_rounded
+                        : Icons.arrow_downward_rounded)
                   : Icons.unfold_more_rounded,
               size: 14,
               color: isSorted ? AppTheme.primaryBlue : AppTheme.textDisabled,
@@ -678,8 +760,9 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     return TableRow(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border:
-            Border(bottom: BorderSide(color: AppTheme.borderSubtle, width: 1)),
+        border: Border(
+          bottom: BorderSide(color: AppTheme.borderSubtle, width: 1),
+        ),
       ),
       children: [
         // Vehicle Number
@@ -743,14 +826,18 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: InkWell(
             onTap: () {
-              Navigator.of(context).pushNamed(AppRouter.vehicleDetailsRoute, arguments: vehicle.id);
+              _openDetails(vehicle.id);
             },
             child: Text(
               vehicle.assignedDriver?.name ?? 'Unassigned',
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: vehicle.assignedDriver != null ? FontWeight.w600 : FontWeight.normal,
-                color: vehicle.assignedDriver != null ? const Color(0xFF1D4ED8) : AppTheme.textMuted,
+                fontWeight: vehicle.assignedDriver != null
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                color: vehicle.assignedDriver != null
+                    ? const Color(0xFF1D4ED8)
+                    : AppTheme.textMuted,
               ),
             ),
           ),
@@ -764,11 +851,17 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
               tooltip: 'Change Status',
               onSelected: (newStatus) async {
                 try {
-                  await VehicleRepository.instance.updateStatus(vehicle.id, newStatus);
+                  await VehicleRepository.instance.updateStatus(
+                    vehicle.id,
+                    newStatus,
+                  );
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to update status: $e'), backgroundColor: AppTheme.errorRed),
+                      SnackBar(
+                        content: Text('Failed to update status: $e'),
+                        backgroundColor: AppTheme.errorRed,
+                      ),
                     );
                   }
                 }
@@ -798,17 +891,15 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.visibility_outlined, size: 18),
-                tooltip: 'View details & documents for ${vehicle.vehicleNumber}',
+                tooltip:
+                    'View details & documents for ${vehicle.vehicleNumber}',
                 color: AppTheme.primaryBlue,
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.all(4),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 splashRadius: 18,
                 onPressed: () {
-                  Navigator.of(context).pushNamed(
-                    AppRouter.vehicleDetailsRoute,
-                    arguments: vehicle.id,
-                  ).then((_) => _loadVehicles(silent: true));
+                  _openDetails(vehicle.id);
                 },
               ),
               IconButton(
@@ -826,11 +917,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                           AppRouter.vehicleEditRoute,
                           arguments: vehicle,
                         );
-                        if (result is Vehicle && mounted) {
-                          if (!_matchesActiveFilters(result)) {
-                            _clearFilters();
-                          }
-                        }
+                        _refreshAfterSave(result);
                       },
               ),
               _deletingIds.contains(vehicle.id)
@@ -848,8 +935,10 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                       color: AppTheme.errorRed,
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.all(4),
-                      constraints:
-                          const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                       splashRadius: 18,
                       onPressed: () => _handleDelete(vehicle),
                     ),
@@ -874,8 +963,10 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.borderSubtle,
                         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
@@ -895,11 +986,17 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                       tooltip: 'Change Status',
                       onSelected: (newStatus) async {
                         try {
-                          await VehicleRepository.instance.updateStatus(vehicle.id, newStatus);
+                          await VehicleRepository.instance.updateStatus(
+                            vehicle.id,
+                            newStatus,
+                          );
                         } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Failed: $e'), backgroundColor: AppTheme.errorRed),
+                              SnackBar(
+                                content: Text('Failed: $e'),
+                                backgroundColor: AppTheme.errorRed,
+                              ),
                             );
                           }
                         }
@@ -923,7 +1020,10 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                 const SizedBox(height: 2),
                 Text(
                   '${vehicle.company} · ${vehicle.type} · Driver: ${vehicle.assignedDriver?.name ?? "Unassigned"}',
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textMuted,
+                  ),
                 ),
                 const SizedBox(height: AppTheme.space12),
                 Row(
@@ -931,10 +1031,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                   children: [
                     TextButton.icon(
                       onPressed: () {
-                        Navigator.of(context).pushNamed(
-                          AppRouter.vehicleDetailsRoute,
-                          arguments: vehicle.id,
-                        ).then((_) => _loadVehicles(silent: true));
+                        _openDetails(vehicle.id);
                       },
                       icon: const Icon(Icons.visibility_outlined, size: 16),
                       label: const Text('Details'),
@@ -944,15 +1041,12 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                       onPressed: _deletingIds.contains(vehicle.id)
                           ? null
                           : () async {
-                              final result = await Navigator.of(context).pushNamed(
-                                AppRouter.vehicleEditRoute,
-                                arguments: vehicle,
-                              );
-                              if (result is Vehicle && mounted) {
-                                if (!_matchesActiveFilters(result)) {
-                                  _clearFilters();
-                                }
-                              }
+                              final result = await Navigator.of(context)
+                                  .pushNamed(
+                                    AppRouter.vehicleEditRoute,
+                                    arguments: vehicle,
+                                  );
+                              _refreshAfterSave(result);
                             },
                       icon: const Icon(Icons.edit_outlined, size: 16),
                       label: const Text('Edit'),
@@ -961,7 +1055,9 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                     _deletingIds.contains(vehicle.id)
                         ? const Padding(
                             padding: EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: SizedBox(
                               width: 16,
                               height: 16,
@@ -970,10 +1066,15 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                           )
                         : TextButton.icon(
                             onPressed: () => _handleDelete(vehicle),
-                            icon: const Icon(Icons.delete_outline,
-                                size: 16, color: AppTheme.errorRed),
-                            label: const Text('Delete',
-                                style: TextStyle(color: AppTheme.errorRed)),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              size: 16,
+                              color: AppTheme.errorRed,
+                            ),
+                            label: const Text(
+                              'Delete',
+                              style: TextStyle(color: AppTheme.errorRed),
+                            ),
                           ),
                   ],
                 ),
@@ -994,30 +1095,38 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 10,
           children: [
             Text(
               'Showing $startIndex–$endIndex of $totalMatches vehicles',
               style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
             ),
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 OutlinedButton(
-                  onPressed: _currentPage > 1
-                      ? () => setState(() => _currentPage--)
+                  onPressed: !_isLoading && _currentPage > 1
+                      ? () => _changePage(_currentPage - 1)
                       : null,
                   style: OutlinedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     minimumSize: Size.zero,
                   ),
                   child: const Text('Previous'),
                 ),
                 const SizedBox(width: AppTheme.space8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.surfaceWhite,
                     borderRadius: BorderRadius.circular(AppTheme.radiusMd),
@@ -1034,12 +1143,14 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                 ),
                 const SizedBox(width: AppTheme.space8),
                 OutlinedButton(
-                  onPressed: _currentPage < totalPages
-                      ? () => setState(() => _currentPage++)
+                  onPressed: !_isLoading && _currentPage < totalPages
+                      ? () => _changePage(_currentPage + 1)
                       : null,
                   style: OutlinedButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     minimumSize: Size.zero,
                   ),
                   child: const Text('Next'),
@@ -1058,8 +1169,11 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
         child: Column(
           children: [
-            const Icon(Icons.directions_car_outlined,
-                size: 48, color: AppTheme.textMuted),
+            const Icon(
+              Icons.directions_car_outlined,
+              size: 48,
+              color: AppTheme.textMuted,
+            ),
             const SizedBox(height: AppTheme.space16),
             const Text(
               'No vehicles registered',
@@ -1080,11 +1194,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
               onPressed: () async {
                 final result = await Navigator.of(context)
                     .pushNamed(AppRouter.vehicleNewRoute);
-                if (result is Vehicle && mounted) {
-                  if (!_matchesActiveFilters(result)) {
-                    _clearFilters();
-                  }
-                }
+                _refreshAfterSave(result);
               },
               icon: const Icon(Icons.add, size: 18),
               label: const Text('Register vehicle'),
@@ -1101,8 +1211,11 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
         child: Column(
           children: [
-            const Icon(Icons.search_off_rounded,
-                size: 48, color: AppTheme.textMuted),
+            const Icon(
+              Icons.search_off_rounded,
+              size: 48,
+              color: AppTheme.textMuted,
+            ),
             const SizedBox(height: AppTheme.space16),
             const Text(
               'No matching vehicles found',

@@ -658,8 +658,10 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
                     InkWell(
                       onTap: () {
                         Navigator.of(context).pushNamed(
-                          AppRouter.vehicleDetailsRoute,
-                          arguments: {'id': m.vehicleId, 'initialTab': 1},
+                          AppRouter.vehicleDetailsPath(
+                            m.vehicleId,
+                            initialTab: 1,
+                          ),
                         ).then((_) => _loadData());
                       },
                       child: Container(
@@ -716,8 +718,10 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
           OutlinedButton.icon(
             onPressed: () {
               Navigator.of(context).pushNamed(
-                AppRouter.vehicleDetailsRoute,
-                arguments: {'id': m.vehicleId, 'initialTab': 1},
+                AppRouter.vehicleDetailsPath(
+                  m.vehicleId,
+                  initialTab: 1,
+                ),
               ).then((_) => _loadData());
             },
             icon: const Icon(Icons.arrow_forward_rounded, size: 14),

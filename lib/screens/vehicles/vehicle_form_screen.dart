@@ -174,7 +174,8 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
         _selectedType != _initialType ||
         _brandController.text.trim() != _initialBrand.trim() ||
         _modelController.text.trim() != _initialModel.trim() ||
-        _selectedStatus != _initialStatus;
+        _selectedStatus != _initialStatus ||
+        _selectedDriverId != _targetVehicle?.assignedDriver?.id;
   }
 
   Vehicle? get _targetVehicle => widget.vehicleToEdit ?? _loadedVehicle;
@@ -588,6 +589,7 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
   }
 
   Widget _buildDriverField() {
+    final currentDriver = _targetVehicle?.assignedDriver;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -611,12 +613,23 @@ class _VehicleFormScreenState extends State<VehicleFormScreen> {
               value: null,
               child: Text('Unassigned (No Driver)', style: TextStyle(fontStyle: FontStyle.italic)),
             ),
-            ..._availableDrivers.map((d) {
-              return DropdownMenuItem<int?>(
-                value: d.id,
-                child: Text('${d.name} (${d.licenseNumber}) - ${d.status.label}'),
-              );
-            }),
+            if (currentDriver != null)
+              DropdownMenuItem<int?>(
+                value: currentDriver.id,
+                child: Text(
+                  '${currentDriver.name} (${currentDriver.licenseNumber}) - Current',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            for (final driver in _availableDrivers)
+              if (driver.id != currentDriver?.id)
+                DropdownMenuItem<int?>(
+                  value: driver.id,
+                  child: Text(
+                    '${driver.name} (${driver.licenseNumber}) - ${driver.status.label}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
           ],
           onChanged: (val) {
             setState(() => _selectedDriverId = val);

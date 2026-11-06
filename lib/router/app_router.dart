@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../core/navigation/public_landing_stub.dart'
+    if (dart.library.js_interop) '../core/navigation/public_landing_web.dart'
+    as landing;
 import '../core/theme/app_theme.dart';
 import '../data/auth/auth_service.dart';
 import '../models/driver.dart';
@@ -35,7 +38,42 @@ class AppRouter {
   static const String driverNewRoute = '/drivers/new';
   static const String driverEditRoute = '/drivers/edit';
 
+  static bool get isWebWorkspace => landing.isWebWorkspace;
+
+  static void returnToHome(BuildContext context) {
+    if (isWebWorkspace) {
+      landing.openPublicLanding();
+      return;
+    }
+    Navigator.of(context).pushReplacementNamed(homeRoute);
+  }
+
+  static Route<dynamic> _workspaceStart() => generateRoute(
+    RouteSettings(
+      name: AuthService.instance.isAuthenticated ? dashboardRoute : loginRoute,
+    ),
+  );
+
+  /// A refreshable details route for the selected vehicle and its initial tab.
+  static String vehicleDetailsPath(int vehicleId, {int initialTab = 0}) {
+    return Uri(
+      path: vehicleDetailsRoute,
+      queryParameters: {
+        'id': vehicleId.toString(),
+        if (initialTab != 0) 'tab': initialTab.toString(),
+      },
+    ).toString();
+  }
+
+  static Route<dynamic> _vehicleNotFound(RouteSettings settings) {
+    return MaterialPageRoute(
+      settings: settings,
+      builder: (_) => const _VehicleNotFoundScreen(),
+    );
+  }
+
   static Route<dynamic> generateRoute(RouteSettings settings) {
+    final uri = Uri.tryParse(settings.name ?? '');
     // Public routes accessible without authentication
     final isPublic = settings.name == homeRoute ||
         settings.name == loginRoute ||
@@ -51,8 +89,9 @@ class AppRouter {
       );
     }
 
-    switch (settings.name) {
+    switch (uri?.path) {
       case homeRoute:
+        if (isWebWorkspace) return _workspaceStart();
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const HomeScreen(),
@@ -98,25 +137,36 @@ class AppRouter {
 
       case vehicleDetailsRoute:
         final args = settings.arguments;
-        final int id;
-        int initialTab = 0;
-        if (args is int) {
-          id = args;
-        } else if (args is Vehicle) {
-          id = args.id;
-        } else if (args is String) {
-          id = int.tryParse(args) ?? 1;
-        } else if (args is Map) {
-          id = int.tryParse(args['id']?.toString() ?? '1') ?? 1;
-          if (args['initialTab'] != null) {
-            initialTab = int.tryParse(args['initialTab'].toString()) ?? 0;
-          }
-        } else {
-          id = 1;
+        final Map<String, String> parameters;
+        try {
+          parameters = uri?.queryParameters ?? const {};
+        } on FormatException {
+          return _vehicleNotFound(settings);
         }
+        final urlId = parameters['id'];
+        final id = urlId != null
+            ? int.tryParse(urlId)
+            : switch (args) {
+                int() => args,
+                Vehicle() => args.id,
+                String() => int.tryParse(args),
+                Map() => int.tryParse(args['id'].toString()),
+                _ => null,
+              };
+        if (id == null || id < 1) {
+          return _vehicleNotFound(settings);
+        }
+
+        final legacyTab = args is Map ? args['initialTab']?.toString() : null;
+        final tab = parameters['tab'] ?? legacyTab;
+        final initialTab = (int.tryParse(tab ?? '') ?? 0).clamp(0, 1);
         return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => VehicleDetailsScreen(vehicleId: id, initialTab: initialTab),
+          settings: RouteSettings(
+            name: vehicleDetailsPath(id, initialTab: initialTab),
+            arguments: args,
+          ),
+          builder: (_) =>
+              VehicleDetailsScreen(vehicleId: id, initialTab: initialTab),
         );
 
       case documentsRoute:
@@ -160,10 +210,7 @@ class AppRouter {
             );
           }
         }
-        return MaterialPageRoute(
-          settings: settings,
-          builder: (_) => const _VehicleNotFoundScreen(),
-        );
+        return _vehicleNotFound(settings);
 
       case driversRoute:
         return MaterialPageRoute(
@@ -191,6 +238,7 @@ class AppRouter {
         );
 
       default:
+        if (isWebWorkspace) return _workspaceStart();
         return MaterialPageRoute(
           settings: settings,
           builder: (_) => const HomeScreen(),

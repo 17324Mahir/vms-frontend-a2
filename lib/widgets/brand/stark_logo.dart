@@ -82,9 +82,9 @@ class StarkLogo extends StatelessWidget {
     final isDark = variant == StarkLogoVariant.dark;
     final primaryTextColor = isDark ? Colors.white : AppTheme.textDark;
     final subtitleTextColor = isDark ? const Color(0xFF94A3B8) : AppTheme.textMuted;
-    final badgeBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFEFF6FF);
-    final badgeTextColor = isDark ? const Color(0xFF38BDF8) : AppTheme.primaryBlue;
-    final badgeBorder = isDark ? const Color(0xFF334155) : const Color(0xFFBFDBFE);
+    final badgeBg = isDark ? AppTheme.navy800 : AppTheme.primaryBlueSubtle;
+    final badgeTextColor = isDark ? AppTheme.accentBlue : AppTheme.primaryBlue;
+    final badgeBorder = isDark ? AppTheme.navy700 : AppTheme.borderHover;
 
     final content = Row(
       mainAxisSize: MainAxisSize.min,
@@ -195,18 +195,18 @@ class StarkEmblem extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF0F172A), // Slate 900
+            AppTheme.brandNavy,
             Color(0xFF1E3A8A), // Blue 900
-            Color(0xFF2563EB), // Blue 600
+            AppTheme.primaryBlue,
           ],
         ),
         border: Border.all(
-          color: const Color(0x4038BDF8), // Subtle cyan rim light
+          color: const Color(0x408BADFF), // Subtle blue rim light
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+            color: AppTheme.primaryBlue.withValues(alpha: 0.35),
             blurRadius: size * 0.3,
             offset: Offset(0, size * 0.1),
           ),
@@ -258,14 +258,14 @@ class _StarkEmblemPainter extends CustomPainter {
     path.lineTo(w * 0.26, h * 0.32);
     path.close();
 
-    // High-contrast clean white and electric-cyan gradient fill
+    // High-contrast clean white and electric-blue gradient fill
     final gradient = const LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
         Colors.white,
         Color(0xFFE0F2FE), // Sky 100
-        Color(0xFF38BDF8), // Sky 400
+        AppTheme.accentBlue,
       ],
     ).createShader(Rect.fromLTWH(0, 0, w, h));
 
@@ -278,7 +278,7 @@ class _StarkEmblemPainter extends CustomPainter {
 
     // Inner energetic core accent dot (Arc-Reactor node)
     final nodePaint = Paint()
-      ..color = const Color(0xFF38BDF8)
+      ..color = AppTheme.accentBlue
       ..style = PaintingStyle.fill;
 
     canvas.drawCircle(Offset(w * 0.5, h * 0.5), size.width * 0.05, nodePaint);

@@ -61,7 +61,7 @@ class AppShell extends StatelessWidget {
         leading: showBackButton
             ? IconButton(
                 icon: const Icon(Icons.arrow_back, size: 20),
-                tooltip: 'Back to Vehicles',
+                tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                 onPressed: onBack ?? () => Navigator.of(context).pop(),
               )
             : (isDesktop
@@ -134,14 +134,14 @@ class AppShell extends StatelessWidget {
       decoration: const BoxDecoration(
         gradient: AppTheme.darkSidebarGradient,
         border: Border(
-          right: BorderSide(color: Color(0xFF1E293B), width: 1),
+          right: BorderSide(color: AppTheme.navy800, width: 1),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildSidebarBrand(),
-          const Divider(color: Color(0xFF1E293B), height: 1),
+          const Divider(color: AppTheme.navy800, height: 1),
           const SizedBox(height: AppTheme.space16),
           _buildSidebarItem(
             icon: Icons.dashboard_rounded,
@@ -213,7 +213,7 @@ class AppShell extends StatelessWidget {
             },
           ),
           const Spacer(),
-          const Divider(color: Color(0xFF1E293B), height: 1),
+          const Divider(color: AppTheme.navy800, height: 1),
           _buildSidebarFooter(context),
         ],
       ),
@@ -274,14 +274,14 @@ class AppShell extends StatelessWidget {
                   Icon(
                     icon,
                     size: 20,
-                    color: isActive ? Colors.white : const Color(0xFF94A3B8),
+                    color: isActive ? Colors.white : AppTheme.textDisabled,
                   ),
                   const SizedBox(width: AppTheme.space12),
                   Expanded(
                     child: Text(
                       label,
                       style: TextStyle(
-                        color: isActive ? Colors.white : const Color(0xFFE2E8F0),
+                        color: isActive ? Colors.white : AppTheme.borderNeutral,
                         fontSize: 14,
                         fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                       ),
@@ -357,7 +357,7 @@ class AppShell extends StatelessWidget {
                 Text(
                   email,
                   style: const TextStyle(
-                    color: Color(0xFF94A3B8),
+                    color: AppTheme.textDisabled,
                     fontSize: 11,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -367,7 +367,7 @@ class AppShell extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, size: 18),
-            color: const Color(0xFF94A3B8),
+            color: AppTheme.textDisabled,
             tooltip: 'Sign out',
             onPressed: () => _handleSignOut(context),
           ),

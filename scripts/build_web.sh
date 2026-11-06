@@ -138,15 +138,23 @@ echo "[*] Building Flutter Web production release bundle..."
 flutter build web --release --no-tree-shake-icons --dart-define=API_BASE_URL="${API_BASE_URL}"
 
 # ------------------------------------------------------------------------------
-# 5. Output Verification
+# 5. Assemble the Next.js landing page and Flutter workspace
 # ------------------------------------------------------------------------------
 if [ ! -f "build/web/index.html" ]; then
   echo "[-] ERROR: Build output missing build/web/index.html!"
   exit 1
 fi
 
+echo "[*] Building the landing page..."
+npm --prefix landing ci
+npm --prefix landing run build
+
+# Keep the Flutter entry point on the same origin for hash routes and session storage.
+cp build/web/index.html build/web/workspace.html
+cp -R landing/out/. build/web/
+
 echo "========================================================"
-echo " Flutter Web build succeeded!"
+echo " Web build succeeded!"
 echo " Publish Directory: build/web"
 echo " Target API_BASE_URL: ${API_BASE_URL}"
 echo "========================================================"
