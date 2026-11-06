@@ -57,6 +57,18 @@ class DocumentApiClient {
     );
   }
 
+  Future<VehicleDocument> updateDocument(int vehicleId, int docId, Map<String, dynamic> payload) async {
+    return _send(
+      'PUT',
+      ApiConfig.vehicleDocumentUri(vehicleId, docId),
+      (response) {
+        final decoded = jsonDecode(response.body);
+        return VehicleDocument.fromJson(decoded as Map<String, dynamic>);
+      },
+      body: jsonEncode(payload),
+    );
+  }
+
   Future<void> deleteDocument(int vehicleId, int docId) async {
     await _send('DELETE', ApiConfig.vehicleDocumentUri(vehicleId, docId), (_) {});
   }
@@ -90,6 +102,9 @@ class DocumentApiClient {
           break;
         case 'POST':
           response = await _client.post(uri, headers: requestHeaders, body: body).timeout(timeout);
+          break;
+        case 'PUT':
+          response = await _client.put(uri, headers: requestHeaders, body: body).timeout(timeout);
           break;
         case 'DELETE':
           response = await _client.delete(uri, headers: requestHeaders).timeout(timeout);

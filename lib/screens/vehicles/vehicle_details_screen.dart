@@ -210,25 +210,26 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
     );
   }
 
-  Future<void> _showUploadDocumentDialog() async {
+  Future<void> _showUploadDocumentDialog({VehicleDocument? documentToEdit}) async {
     if (_vehicle == null) return;
     final messenger = ScaffoldMessenger.of(context);
+    final isEditing = documentToEdit != null;
 
-    DocumentType docType = DocumentType.registration;
-    final docNumberCtrl = TextEditingController();
-    DateTime? issueDate = DateTime.now().subtract(const Duration(days: 30));
-    DateTime expiryDate = DateTime.now().plusYearsSafe(1);
-    final notesCtrl = TextEditingController();
-    String? selectedFileName;
+    DocumentType docType = documentToEdit?.documentType ?? DocumentType.registration;
+    final docNumberCtrl = TextEditingController(text: documentToEdit?.documentNumber ?? '');
+    DateTime? issueDate = documentToEdit?.issueDate ?? DateTime.now().subtract(const Duration(days: 30));
+    DateTime expiryDate = documentToEdit?.expiryDate ?? DateTime.now().plusYearsSafe(1);
+    final notesCtrl = TextEditingController(text: documentToEdit?.notes ?? '');
+    String? selectedFileName = documentToEdit?.fileName;
     String? base64Data;
-    String? fileType;
+    String? fileType = documentToEdit?.fileType;
 
     await showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) {
           return AlertDialog(
-            title: const Text('Upload Vehicle Document'),
+            title: Text(isEditing ? 'Edit Vehicle Document' : 'Upload Vehicle Document'),
             content: SizedBox(
               width: 500,
               child: SingleChildScrollView(
@@ -356,23 +357,33 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                       'fileData': base64Data,
                       'notes': notesCtrl.text.trim().isNotEmpty ? notesCtrl.text.trim() : null,
                     };
-                    await _docClient.uploadDocument(_vehicle!.id, payload);
+                    if (isEditing) {
+                      await _docClient.updateDocument(_vehicle!.id, documentToEdit.id, payload);
+                    } else {
+                      await _docClient.uploadDocument(_vehicle!.id, payload);
+                    }
                     final updatedDocs = await _docClient.getDocumentsForVehicle(_vehicle!.id);
                     if (mounted) {
                       setState(() => _documents = updatedDocs);
                       messenger.showSnackBar(
-                        const SnackBar(content: Text('Document uploaded successfully'), backgroundColor: Color(0xFF15803D)),
+                        SnackBar(
+                          content: Text(isEditing ? 'Document updated successfully' : 'Document uploaded successfully'),
+                          backgroundColor: const Color(0xFF15803D),
+                        ),
                       );
                     }
                   } catch (e) {
                     if (mounted) {
                       messenger.showSnackBar(
-                        SnackBar(content: Text('Failed to upload document: $e'), backgroundColor: const Color(0xFFDC2626)),
+                        SnackBar(
+                          content: Text('Failed to ${isEditing ? 'update' : 'upload'} document: $e'),
+                          backgroundColor: const Color(0xFFDC2626),
+                        ),
                       );
                     }
                   }
                 },
-                child: const Text('Upload Document'),
+                child: Text(isEditing ? 'Save Changes' : 'Upload Document'),
               ),
             ],
           );
@@ -873,6 +884,11 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> with Single
                               ],
                             ],
                           ),
+                        ),
+                        IconButton(
+                          tooltip: 'Edit Document',
+                          icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue, size: 20),
+                          onPressed: () => _showUploadDocumentDialog(documentToEdit: doc),
                         ),
                         IconButton(
                           tooltip: 'Delete Document',
