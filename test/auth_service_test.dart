@@ -7,6 +7,7 @@ import 'package:stark_vms/core/config/api_config.dart';
 import 'package:stark_vms/core/errors/api_exception.dart';
 import 'package:stark_vms/data/api/vehicle_api_client.dart';
 import 'package:stark_vms/data/auth/auth_service.dart';
+import 'package:stark_vms/data/auth/session_storage.dart';
 import 'package:stark_vms/data/mock_data.dart';
 import 'package:stark_vms/data/vehicle_repository.dart';
 import 'package:stark_vms/router/app_router.dart';
@@ -217,6 +218,99 @@ void main() {
       expect(widget, isA<LoginScreen>());
     });
   });
+
+  group('Session Storage & Page Reload Persistence', () {
+    late _InMemorySessionStorage testStorage;
+
+    setUp(() {
+      testStorage = _InMemorySessionStorage();
+      SessionStorage.setInstanceForTesting(testStorage);
+    });
+
+    tearDown(() {
+      SessionStorage.resetInstance();
+    });
+
+    test('Login persists session tokens to session storage for page reloads', () async {
+      final authService = AuthService();
+      final mockClient = MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'accessToken': 'persisted-jwt-token-xyz',
+            'tokenType': 'Bearer',
+            'expiresIn': 3600,
+            'user': {'email': 'operator@starkgroup.test'}
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      await authService.login('operator@starkgroup.test', 'Password123!', client: mockClient);
+
+      expect(testStorage.read('access_token'), equals('persisted-jwt-token-xyz'));
+      expect(testStorage.read('email'), equals('operator@starkgroup.test'));
+      expect(testStorage.read('token_type'), equals('Bearer'));
+      expect(testStorage.read('expires_in'), equals('3600'));
+      expect(testStorage.read('expires_at'), isNotNull);
+    });
+
+    test('AuthService restores active session on initialization/refresh when valid', () {
+      testStorage.write('access_token', 'restored-token-abc');
+      testStorage.write('email', 'restored@starkgroup.test');
+      testStorage.write('token_type', 'Bearer');
+      testStorage.write('expires_in', '900');
+      testStorage.write('expires_at', DateTime.now().add(const Duration(minutes: 10)).toIso8601String());
+
+      final newService = AuthService();
+
+      expect(newService.isAuthenticated, isTrue);
+      expect(newService.currentEmail, equals('restored@starkgroup.test'));
+      expect(newService.currentSession?.accessToken, equals('restored-token-abc'));
+    });
+
+    test('AuthService discards expired token during initialization', () {
+      testStorage.write('access_token', 'stale-token');
+      testStorage.write('email', 'stale@starkgroup.test');
+      testStorage.write('expires_at', DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String());
+
+      final newService = AuthService();
+
+      expect(newService.isAuthenticated, isFalse);
+      expect(testStorage.read('access_token'), isNull);
+    });
+
+    test('Sign out wipes persisted tokens from session storage', () async {
+      testStorage.write('access_token', 'token-to-clear');
+      testStorage.write('email', 'user@starkgroup.test');
+      testStorage.write('expires_at', DateTime.now().add(const Duration(minutes: 10)).toIso8601String());
+
+      final authService = AuthService();
+      expect(authService.isAuthenticated, isTrue);
+
+      authService.signOut();
+
+      expect(authService.isAuthenticated, isFalse);
+      expect(testStorage.read('access_token'), isNull);
+      expect(testStorage.read('email'), isNull);
+    });
+  });
+}
+
+class _InMemorySessionStorage extends SessionStorage {
+  final Map<String, String> _data = {};
+
+  @override
+  void write(String key, String value) => _data[key] = value;
+
+  @override
+  String? read(String key) => _data[key];
+
+  @override
+  void remove(String key) => _data.remove(key);
+
+  @override
+  void clear() => _data.clear();
 }
 
 class _FakeBuildContext extends Fake implements BuildContext {}

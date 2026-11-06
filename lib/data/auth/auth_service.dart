@@ -9,14 +9,17 @@ import '../../models/auth_session.dart';
 import '../../models/auth_user.dart';
 import '../driver_repository.dart';
 import '../vehicle_repository.dart';
+import 'session_storage.dart';
 
 /// Centralized service managing client-side authentication, session state, and JWT bearer tokens.
 ///
-/// Security constraints:
-/// - Tokens and session data are stored exclusively in memory.
-/// - Never saved to localStorage, sessionStorage, or SharedPreferences.
-/// - Reloading the browser page resets in-memory state and returns to login.
-/// - Signing out clears session tokens and flushes private vehicle records from cache.
+/// Session persistence:
+/// - On Flutter Web, tokens are persisted to `sessionStorage` (tab-scoped) so that
+///   page reloads do not require re-authentication.
+/// - `sessionStorage` is automatically cleared when the browser tab is closed.
+/// - On non-web platforms and in tests, a no-op stub is used (pure in-memory).
+/// - Signing out clears session tokens from both memory and `sessionStorage`,
+///   and flushes private vehicle records from cache.
 class AuthService {
   static AuthService _instance = AuthService();
   static AuthService get instance => _instance;
@@ -34,7 +37,67 @@ class AuthService {
     }
   }
 
-  AuthService();
+  AuthService() {
+    _restoreSession();
+  }
+
+  /// Attempts to restore a previously persisted session from sessionStorage (web only).
+  void _restoreSession() {
+    try {
+      final storage = SessionStorage.instance;
+      final token = storage.read('access_token');
+      final email = storage.read('email');
+      final expiresAtStr = storage.read('expires_at');
+
+      if (token == null || token.isEmpty || email == null || expiresAtStr == null) return;
+
+      final expiresAt = DateTime.tryParse(expiresAtStr);
+      if (expiresAt == null || DateTime.now().isAfter(expiresAt)) {
+        // Token expired — clear stale data
+        storage.clear();
+        return;
+      }
+
+      final tokenType = storage.read('token_type') ?? 'Bearer';
+      final expiresIn = int.tryParse(storage.read('expires_in') ?? '') ?? 900;
+      final sessionId = int.tryParse(storage.read('session_id') ?? '') ?? 1;
+
+      _sessionCounter = sessionId;
+      _currentSession = AuthSession(
+        accessToken: token,
+        tokenType: tokenType,
+        expiresIn: expiresIn,
+        expiresAt: expiresAt,
+        user: AuthUser(email: email),
+        sessionId: sessionId,
+      );
+      sessionNotifier.value = _currentSession;
+    } catch (_) {
+      // Gracefully degrade — session restore is best-effort
+    }
+  }
+
+  /// Persists the current session to sessionStorage so it survives page reloads.
+  void _persistSession(AuthSession session) {
+    try {
+      final storage = SessionStorage.instance;
+      storage.write('access_token', session.accessToken);
+      storage.write('token_type', session.tokenType);
+      storage.write('expires_in', session.expiresIn.toString());
+      storage.write('expires_at', session.expiresAt.toIso8601String());
+      storage.write('email', session.user.email);
+      storage.write('session_id', session.sessionId.toString());
+    } catch (_) {
+      // Best-effort persistence; in-memory session still works
+    }
+  }
+
+  /// Clears persisted session data from sessionStorage.
+  void _clearPersistedSession() {
+    try {
+      SessionStorage.instance.clear();
+    } catch (_) {}
+  }
 
   @visibleForTesting
   void setAuthenticatedForTesting({String email = 'tester@starkgroup.test', String token = 'fake-test-jwt'}) {
@@ -148,6 +211,7 @@ class AuthService {
         _currentSession = session;
         sessionExpiredMessage.value = null;
         sessionNotifier.value = session;
+        _persistSession(session);
         return session;
       }
 
@@ -227,6 +291,7 @@ class AuthService {
         _currentSession = session;
         sessionExpiredMessage.value = null;
         sessionNotifier.value = session;
+        _persistSession(session);
         return session;
       }
 
@@ -490,13 +555,15 @@ class AuthService {
     signOut(reason: reason ?? 'Session expired. Please sign in again.');
   }
 
-  /// Clears in-memory session tokens, notifies listeners, and wipes private cached fleet data.
+  /// Clears in-memory session tokens, persisted session storage, notifies listeners,
+  /// and wipes private cached fleet data.
   void signOut({String? reason}) {
     _currentSession = null;
     sessionNotifier.value = null;
     if (reason != null) {
       sessionExpiredMessage.value = reason;
     }
+    _clearPersistedSession();
     _clearLocalCaches();
   }
 
