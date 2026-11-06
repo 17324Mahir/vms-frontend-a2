@@ -1148,8 +1148,10 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
               'Showing $startIndex–$endIndex of $totalMatches vehicles',
               style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            Wrap(
+              spacing: AppTheme.space8,
+              runSpacing: AppTheme.space4,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 OutlinedButton(
                   onPressed: !_isLoading && _currentPage > 1
@@ -1164,7 +1166,6 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                   ),
                   child: const Text('Previous'),
                 ),
-                const SizedBox(width: AppTheme.space8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -1184,7 +1185,6 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: AppTheme.space8),
                 OutlinedButton(
                   onPressed: !_isLoading && _currentPage < totalPages
                       ? () => _changePage(_currentPage + 1)
