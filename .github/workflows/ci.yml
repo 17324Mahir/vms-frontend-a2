@@ -58,3 +58,4 @@ jobs:
           name: flutter-web-bundle
           path: build/web/
           retention-days: 7
+
